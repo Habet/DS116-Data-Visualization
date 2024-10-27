@@ -1,0 +1,9 @@
+# Ignore all files by default
+*
+
+# Allow .gitignore
+!.gitignore
+
+# Allow specific files or folders
+!README.md
+!specific_folder/

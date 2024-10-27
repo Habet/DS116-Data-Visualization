@@ -1,0 +1,503 @@
+---
+title: An R Markdown document converted from "Time series.ipynb"
+output: html_document
+---
+
+## Few ways to deal with time in Python
+ ## - Python datetime library
+ ## - numpy dates
+ ## - Pandas
+
+## Python datetime library, classes
+
+### -  class datetime.date - (year, month,day)
+
+
+###  - class datetime.time - (hour, minute, second, microsecond, and tzinfo)
+
+
+### -  class datetime.datetime - (year, month, day, hour, minute, second, microsecond, and tzinfo)
+
+
+### -  class datetime.timedelta
+
+
+### -  class datetime.tzinfo
+
+## Imports
+
+```{python}
+from datetime import date, time, timedelta, datetime
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+%matplotlib inline
+```
+
+```{python}
+today = date.today()
+today
+```
+
+```{python}
+scudetto = date(2000, 5, 14)
+scudetto
+```
+
+## Which day of the week was it?
+
+```{python}
+scudetto.isoweekday()
+```
+
+Elements of the date
+
+```{python}
+scudetto.month
+```
+
+```{python}
+scudetto.day
+```
+
+```{python}
+scudetto.year
+```
+
+## String representatin of the date
+
+```{python}
+scudetto.__str__()
+```
+
+## When was that ? time difference
+
+```{python}
+happy = date.today() - scudetto
+happy
+```
+
+How many days ?
+
+```{python}
+happy.days
+```
+
+How many seconds ?
+
+```{python}
+happy.total_seconds()
+```
+
+When to expect next time ?
+
+```{python}
+next_scudeto = date.today() + timedelta(158)
+next_scudeto
+```
+
+# Dates and time with numpy
+
+```{python}
+scudetto = np.datetime64('2000-05-14')
+scudetto
+```
+
+## Create date sequence
+
+```{python}
+np.array(['2000-05-14', '2000-05-15', '2000-05-16'], dtype="datetime64")
+```
+
+## Specify start and end dates
+
+```{python}
+np.arange('2000-05-14', '2000-06-14', dtype = "datetime64")
+```
+
+## Specify start and end dates with different frequency
+
+Monthly data
+
+```{python}
+np.arange('2000-05', '2005-06', dtype = "datetime64")
+```
+
+## Daily data with start and ending points as days
+
+```{python}
+np.arange('2000-05', '2005-06', dtype = "datetime64[D]")
+```
+
+## When you specify just month, it is still going to be an exact day
+
+```{python}
+np.datetime64('2000-05') 
+```
+
+```{python}
+np.datetime64('2000-05-01')
+```
+
+```{python}
+np.datetime64('2000-05') == np.datetime64('2000-05-01')
+```
+
+# timedelta with numpy
+
+```{python}
+np.datetime64('2019-12-18') -  np.datetime64('2000-05-14')
+```
+
+```{python}
+days = np.datetime64('2019-12-18') -  np.datetime64('2000-05-14')
+days.astype('int')
+```
+
+## Looking forward to future
+
+```{python}
+np.datetime64('2000-05-14') + np.timedelta64(10, 'D')
+```
+
+## Date and time with pandas
+
+```{python}
+scudetto = pd.Timestamp('2000-05-14')
+scudetto
+```
+
+```{python}
+scudetto = pd.Timestamp(datetime(2000,5,14))
+scudetto
+```
+
+## Look at the attributes
+
+```{python}
+scudetto.day
+```
+
+```{python}
+scudetto.year
+```
+
+```{python}
+scudetto.month
+```
+
+```{python}
+scudetto.dayofweek
+```
+
+```{python}
+scudetto.weekday_name
+```
+
+## pandas period
+
+```{python}
+period = pd.Period('2000-05')
+period
+```
+
+## Change the frequency of the date
+
+```{python}
+period.asfreq('D')
+```
+
+```{python}
+period.asfreq('A')
+```
+
+```{python}
+m1 = pd.Period('2005-04')
+m1
+```
+
+```{python}
+m1+5
+```
+
+## Working with time series
+
+```{python}
+data = pd.read_csv('H5074.csv')
+data.head(10)
+```
+
+```{python}
+data.dtypes
+```
+
+# Parse the variable Timestamto into datetype64
+
+```{python}
+data['Timestamp'] = pd.to_datetime(data['Timestamp'])
+data.dtypes
+```
+
+```{python}
+data.set_index('Timestamp', inplace = True)
+data.info()
+```
+
+# Or you can parse the time index while reading csv file
+
+```{python}
+data = pd.read_csv('H5074.csv', parse_dates = ['Timestamp'])
+data.head()
+```
+
+```{python}
+data.set_index('Timestamp', inplace = True)
+data.info()
+```
+
+## Plot
+
+```{python}
+data['Temperature_Celsius'].plot(title = 'Temperature by minutes');
+```
+
+## Indexing with date
+
+```{python}
+day1 = data['2019-12-12']
+day1['Temperature_Celsius'].plot();
+```
+
+## Two days
+
+```{python}
+day12 = data['2019-12-12':'2019-12-13']
+day12['Temperature_Celsius'].plot();
+```
+
+## Upsampling 
+#### is the process of inserting zero-valued/NA samples between original samples to increase the sampling rate.
+
+```{python}
+data = data.asfreq('60s')
+data.head(10)
+```
+
+# Filling missing values
+
+## Fill forward - take the previous valid observation
+
+```{python}
+data.fillna(method = 'ffill', inplace = True)
+data.head(10)
+```
+
+## Back fill - bfill: use next valid observation to fill gap
+
+```{python}
+data = pd.read_csv('H5074.csv', parse_dates = ['Timestamp'], index_col = "Timestamp")
+data = data.asfreq('60s')
+data.fillna(method = 'bfill', inplace=True)
+data.head(10)
+```
+
+## Downsampling
+Downsampling (or subsampling) is the process of reducing the sampling rate.
+
+Summarise by every two minutes interval
+
+```{python}
+data_h = data.resample('120s', closed = 'left').mean()
+data_h.head(10)
+```
+
+## Summarise by every two minutes interval, closed right
+
+```{python}
+data_h = data.resample('120s', closed = 'right').mean()
+data_h.head(10)
+```
+
+## Daily summary
+
+```{python}
+data_h = data.resample('D', closed = 'right').mean()
+data_h.head(10)
+```
+
+# Rolling window functions
+
+```{python}
+stocks = pd.read_csv('stocks.csv', parse_dates = ['Dates'], index_col = 'Dates')
+stocks.info()
+```
+
+# Take only stocks of Apple
+
+```{python}
+AAPL = stocks[['AAPL']].copy()
+```
+
+```{python}
+AAPL['rolling30'] = AAPL.rolling(window = 30).mean()
+AAPL.head(10)
+```
+
+# Plotting
+
+```{python}
+AAPL.plot();
+```
+
+## 60 days rolling
+
+```{python}
+AAPL['rolling60'] = AAPL['AAPL'].rolling(window = 60).mean()
+AAPL[['AAPL', 'rolling60']].plot();
+```
+
+## You can try any function you want
+
+### median
+
+```{python}
+AAPL = stocks[['AAPL']].copy()
+AAPL['rolling60'] = AAPL['AAPL'].rolling(window = 60).median()
+AAPL.plot();
+```
+
+# Standard deviation
+
+```{python}
+AAPL = stocks[['AAPL']].copy()
+AAPL['rolling60'] = AAPL['AAPL'].rolling(window = 60).std()
+AAPL.plot();
+```
+
+## Aggregate the data
+
+```{python}
+AAPL = stocks[['AAPL']].copy()
+agg = AAPL.rolling(window = 60).agg(['mean', 'std', 'median'])
+```
+
+```{python}
+agg.plot(subplots = True);
+```
+
+## Quantiles
+
+```{python}
+median = AAPL['AAPL'].rolling(window = 60).median().to_frame('median')
+q10 = AAPL['AAPL'].rolling(window = 60).quantile(.1).to_frame('q10')
+q90 = AAPL['AAPL'].rolling(window = 60).quantile(.9).to_frame('q90')
+pd.concat([median, q10, q90], axis = 1).plot();
+```
+
+## Expanding windows: Calculates metrics for periods up to curent date
+
+## Calculate  mean up to date
+
+```{python}
+AAPL['mean'] = AAPL.expanding().mean()
+```
+
+```{python}
+AAPL.plot();
+```
+
+## Air passangers monthly data
+
+```{python}
+air = pd.read_csv('airPassengers.csv', parse_dates = ['Month'])
+air.info()
+```
+
+## Set monthly index
+
+```{python}
+air.set_index(pd.PeriodIndex(air['Month'],freq = 'M'), inplace = True)
+del air['Month']
+```
+
+```{python}
+air.head()
+```
+
+## Visualize
+
+```{python}
+air.plot()
+plt.style.use('ggplot');
+```
+
+## Import statsmodel
+
+```{python}
+import statsmodels.api as sm
+```
+
+Look at the autocorrelation function
+
+```{python}
+sm.tsa.stattools.acf(air)
+```
+
+## Plot ACF
+
+```{python}
+sm.graphics.tsa.plot_acf(air, lags = 12);
+```
+
+## Exponential smoothing
+
+```{python}
+from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing
+```
+
+```{python}
+model = ExponentialSmoothing(air, trend="add", seasonal="add", seasonal_periods=12)
+model.fit()
+```
+
+```{python}
+air2 = air.copy()
+air2['forecast'] = model.predict(params = model.params, start = '1949-01', end = '1960-12')
+```
+
+## Predicting for the future periods
+
+```{python}
+forecast = pd.DataFrame(model.predict(params = model.params, start = '1961-01', end = '1961-12'), columns = ['forecast'])
+```
+
+### Add to the dataframe and reset index
+
+```{python}
+air2 = air2.append(forecast)
+air2.set_index(pd.period_range(start = '1949-01', end = '1961-12', freq = 'M'), inplace = True)
+```
+
+```{python}
+air2.plot(title = 'Forecast and actual values');
+```
+
+## ARIMA
+
+```{python}
+from statsmodels.tsa.arima_model import ARIMA
+```
+
+```{python}
+arima_model = ARIMA(air['Passengers'], order = (1,0,1)).fit()
+```
+
+```{python}
+air2 = air.copy()
+air2['arima'] = arima_model.predict()
+```
+
+```{python}
+air2.plot(title = 'Predictions with ARIMA');
+```
+

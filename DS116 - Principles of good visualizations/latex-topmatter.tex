@@ -1,0 +1,19 @@
+% declare overall beamer theme to use as baseline
+\usetheme{default}
+
+% make code-output smaller
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{fontsize=\small, commandchars=\\\{\}}
+
+% make console-output smaller:
+  \makeatletter
+\def\verbatim{\tiny\@verbatim \frenchspacing\@vobeyspaces \@xverbatim}
+\makeatother
+
+
+\setlength{\parskip}{-2pt}
+
+
+\setlength{\OuterFrameSep}{4pt}
+\makeatletter
+\preto{\@verbatim}{\topsep=-10pt \partopsep=-10pt }
+\makeatother

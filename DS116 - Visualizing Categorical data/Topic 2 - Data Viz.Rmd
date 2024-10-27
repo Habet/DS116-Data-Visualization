@@ -1,0 +1,824 @@
+---
+title: "Vizualization"
+author: "Habet Madoyan"
+date: "June 18, 2018"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+library(ggplot2)
+```
+
+
+
+```{r}
+data(iris)
+str(iris)
+```
+
+\pagebreak
+```{r}
+library(ggplot2)
+g1 <- ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width))
+g1
+```
+
+\pagebreak
+```{r}
+g1+geom_point()
+```
+
+\pagebreak
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width))+geom_point()
+```
+
+```{r}
+ggplot()+geom_point(data=iris, aes(x=Sepal.Length, y=Sepal.Width))
+```
+
+
+
+\pagebreak
+```{r}
+g1+geom_line()
+```
+
+\pagebreak
+
+```{r}
+g1+geom_line()+geom_point()
+```
+
+
+\pagebreak
+
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width))+
+  geom_point(color="red", size=7)
+```
+
+\pagebreak
+
+
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width))+
+  geom_point(color="blue", size=7, shape=9)
+```
+
+
+
+
+
+
+\pagebreak
+
+```{r}
+df11 <- data.frame(x = rnorm(100, 1000, 15),
+                 y = rnorm(100, 15,1))
+
+ggplot(df11, aes(x=x, y=y))+geom_point()
+```
+
+
+\pagebreak
+
+#Del
+
+```{r}
+data(mtcars)
+ggplot(mtcars, aes(x=hp, y=mpg))+geom_point()+
+  scale_x_sqrt()
+```
+
+
+
+\pagebreak
+
+# Colors in R
+
+```{r}
+length(colors())
+colors()[1:10]
+```
+
+```{r}
+col2rgb(col=1:6)
+```
+
+\pagebreak
+```{r}
+col2rgb("gold")
+
+# And the hexadecimal notation
+
+rgb(255,215,0, maxColorValue = 255)
+```
+
+\pagebreak
+```{r}
+library(RColorBrewer)
+brewer.pal(n=5, name = "Set3")
+```
+
+
+
+\pagebreak
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width, color=Species))+ geom_point()+
+  scale_color_manual(values = c("red", "green", "orange"))
+```
+
+
+\pagebreak
+```{r, eval=F}
+install.packages("wesanderson")
+```
+
+```{r}
+library(wesanderson)
+wes_palette(name="IsleofDogs2")
+```
+
+
+Using the Hex notation and colors from The Isle of dogs
+
+```{r}
+wes_palettes$Darjeeling1
+```
+
+
+```{r, tidy=F}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width, color=Species))+ geom_point()+
+  scale_color_manual(values = c("#FF0000", "#00A08A", "#F2AD00"))
+```
+
+
+
+\pagebreak
+
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width, color=Species))+ geom_point()+
+  scale_color_brewer(palette="Set3")
+```
+
+\pagebreak
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width, color=Species))+ geom_point()+
+  scale_color_manual(values=wes_palette("GrandBudapest1"))
+```
+
+\pagebreak
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width, color=Petal.Length))+geom_point()
+```
+
+
+
+\pagebreak
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width, size=Petal.Length))+
+  geom_point()
+```
+
+\pagebreak
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width, size=Petal.Length, color=Species))+
+  geom_point()
+```
+
+\pagebreak
+```{r}
+movies <- read.csv("movies3.csv")
+colnames(movies)
+```
+
+
+```{r}
+ggplot(movies, aes(x=imdbRating))+geom_histogram()
+```
+
+\pagebreak
+
+More or less the same
+
+```{r}
+ggplot(movies, aes(x=imdbRating))+geom_bar()
+```
+
+
+
+\pagebreak
+```{r}
+ggplot(movies, aes(x=imdbRating))+geom_histogram(bins = 20)
+```
+
+\pagebreak
+```{r}
+ggplot(movies, aes(x=imdbRating))+geom_histogram(bins = 50)
+```
+
+\pagebreak
+```{r}
+ggplot(movies, aes(x=imdbRating))+geom_histogram(binwidth = 0.2)
+```
+
+
+
+\pagebreak
+Categorical data
+```{r}
+summer <- read.csv("summer.csv")
+summer_usa <- summer[summer$Country=="USA",]
+```
+
+```{r}
+ggplot(summer_usa, aes(x=Medal))+geom_bar()
+```
+
+
+\pagebreak
+
+```{r}
+levels(summer_usa$Medal)
+summer_usa$Medal <- factor(summer_usa$Medal, levels=c("Silver", "Gold","Bronze"))
+levels(summer_usa$Medal)
+```
+
+
+
+```{r}
+ggplot(summer_usa, aes(x=Medal)) + geom_bar(fill = c("#E6E8FA", "#CFB53B", "#8C7853"))
+```
+
+
+\pagebreak
+```{r}
+usa_medals <- data.frame(Medal=c("Silver", "Gold", "Bronze"),
+                         Percentage = c(0.27,0.49, 0.24))
+```
+
+```{r, eval = F}
+ggplot(usa_medals, aes(x=Medal, y=Percentage)) + geom_bar()
+```
+
+
+
+```{r}
+ggplot(usa_medals, aes(x=Medal, y=Percentage)) + 
+  geom_bar(stat="identity", fill=c('red','green','blue'))
+```
+
+
+\pagebreak
+
+```{r}
+summer_usa$Medal <- factor(summer_usa$Medal, levels=c("Bronze", "Silver", "Gold"))
+ggplot(summer_usa, aes(x=Year, fill=Medal))+geom_bar()
+```
+
+
+\pagebreak
+
+```{r}
+ggplot(summer_usa, aes(x=Year, fill=Medal)) + geom_bar(position="fill")
+```
+
+
+\pagebreak
+
+```{r}
+ggplot(summer_usa, aes(x=Year, fill=Medal)) + geom_bar(position="dodge")
+```
+
+\pagebreak
+
+```{r}
+ggplot(usa_medals, aes(x=Medal, y=Percentage)) + geom_bar(stat="identity") +
+  coord_flip()
+```
+
+\pagebreak
+```{r}
+ggplot(summer_usa, aes(x=factor(1), fill=Medal)) + geom_bar()
+```
+
+\pagebreak
+```{r}
+ggplot(summer_usa, aes(x=factor(1), fill=Medal))+geom_bar()+ coord_polar(theta="y",start=0)
+```
+
+
+
+\pagebreak
+```{r}
+ggplot(movies, aes(x=Metascore, y=imdbRating))+geom_point()
+```
+
+
+
+
+\pagebreak
+```{r}
+ggplot(movies, aes(x=Metascore, y=imdbRating))+geom_point()+
+  coord_cartesian(ylim=c(5,10), xlim=c(50,100))
+```
+
+\pagebreak
+
+```{r}
+ggplot(movies, aes(x=Metascore, y=imdbRating))+geom_point(alpha=0.3, col="red", size=2.7)+
+  coord_cartesian(ylim=c(5,10), xlim=c(50,100))
+```
+
+\pagebreak
+```{r}
+ggplot(iris, aes(x=Species, y=Sepal.Length))+geom_boxplot()
+```
+
+
+\pagebreak
+```{r}
+ggplot(iris, aes(x=Species, y=Petal.Length))+geom_boxplot()
+```
+
+\pagebreak
+
+```{r}
+options(scipen=999)
+ggplot(movies, aes(x=gross_adjusted))+geom_histogram()
+```
+
+\pagebreak
+```{r}
+ggplot(movies, aes(y=gross_adjusted, x=""))+geom_boxplot()
+```
+
+
+
+\pagebreak
+```{r}
+options(scipen=999)
+ggplot(movies, aes(y=gross_adjusted, x="")) + geom_boxplot()+
+  coord_cartesian(ylim=c(0,750000000))
+```
+\pagebreak
+
+```{r}
+options(scipen=999)
+ggplot(movies, aes(y=gross_adjusted, x="")) + geom_boxplot()+
+  coord_cartesian(ylim=c(0,750000000))+coord_flip()
+```
+
+\pagebreak
+```{r}
+ggplot(movies, aes(x=Metascore)) + geom_histogram()
+```
+
+\pagebreak
+```{r}
+ggplot(movies, aes(y=Metascore, x="")) + geom_boxplot() + coord_flip()
+```
+
+
+
+\pagebreak
+```{r}
+ggplot(movies, aes(x=Metascore, y=imdbRating)) + geom_point() +
+  scale_x_log10()
+```
+
+\pagebreak
+```{r}
+ggplot(movies, aes(x=Metascore, y=imdbRating))+geom_point()+
+  scale_y_sqrt()
+```
+
+
+\pagebreak
+
+```{r}
+movies_sub <- movies[movies$genre_first %in% c("Action","Comedy") &
+                       movies$Rated %in% c("PG","PG-13","R"),]
+ggplot(movies_sub, aes(x=Metascore, y=imdbRating))+
+  geom_point()+facet_grid(.~Rated)
+```
+
+\pagebreak
+
+```{r}
+ggplot(movies_sub, aes(x=Metascore, y=imdbRating)) +
+  geom_point() + facet_grid(Rated~.)
+```
+
+\pagebreak
+
+```{r}
+ggplot(movies_sub, aes(x=imdbRating)) + geom_histogram(fill="red") +
+  facet_grid(Rated~genre_first)
+```
+
+\pagebreak
+
+```{r}
+ggplot(movies, aes(x=Metascore, y=imdbRating))+geom_point() +
+  ggtitle("IMDB ratings vs Metascore") + xlab("Metascore") + ylab("IMDb")
+```
+
+\pagebreak
+
+```{r}
+ggplot(movies, aes(x=Metascore, y=imdbRating)) + geom_point() +
+  labs(title="IMDB ratings vs Metascore", x="Metascore", y="IMDb")
+```
+
+\pagebreak
+
+```{r}
+ggplot(movies, aes(x=Metascore, y=imdbRating)) + geom_point() +
+  labs(title="IMDB ratings vs Metascore", x="Metascore", y="IMDb") +
+  theme(panel.background =  element_rect(fill = "green"))
+```
+
+\pagebreak
+
+```{r}
+ggplot(movies, aes(x=Metascore, y=imdbRating))+geom_point() +
+  labs(title="IMDB ratings vs Metascore", x="Metascore", y="IMDb") +
+  theme(panel.background =  element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(color="red"))
+```
+
+\pagebreak
+
+```{r}
+ggplot(movies, aes(x=Metascore, y=imdbRating))+geom_point()+
+  labs(title="IMDB ratings vs Metascore", x="Metascore", y="IMDb")+
+  theme(axis.text.x = element_text(size=15, color="red", face="italic"),
+        axis.title.x = element_text(color="green", size=16),
+        axis.ticks.x = element_line(size=1.5, color="red"))
+```
+
+
+\pagebreak
+
+
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width))+geom_point()
+```
+
+
+look at the correlation
+
+```{r}
+cor(iris$Sepal.Length, iris$Sepal.Width)
+```
+
+
+\pagebreak
+
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width))+geom_point()+ geom_smooth(method='lm', se=F)
+```
+
+
+
+\pagebreak
+
+## Setosa
+
+```{r}
+cor(iris$Sepal.Length[iris$Species=='setosa'],
+    iris$Sepal.Width[iris$Species=='setosa'])
+```
+
+## Versicolor
+
+```{r}
+cor(iris$Sepal.Length[iris$Species=='versicolor'],
+    iris$Sepal.Width[iris$Species=='versicolor'])
+```
+
+## Virginica
+
+```{r}
+cor(iris$Sepal.Length[iris$Species=='virginica'],
+    iris$Sepal.Width[iris$Species=='virginica'])
+```
+
+\pagebreak
+
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width, color=Species))+geom_point()
+```
+
+
+\pagebreak
+
+```{r}
+ggplot(data=iris, aes(x=Sepal.Length, y=Sepal.Width, color = Species))+geom_point()+
+  geom_smooth(method = 'lm', se=F)
+```
+
+
+```{r}
+goggles<-read.csv('goggles.csv')
+summary(goggles)
+```
+
+
+```{r}
+ggplot(data=goggles, aes(x = alcohol, y = attractiveness)) + geom_boxplot() +labs(x = 'Alcohol Consumption', y = 'Attractiveness of the date', title = 'Boxplot for beer goggles effect')
+```
+
+
+\pagebreak
+```{r}
+levels(goggles$alcohol)
+# we want the levels to be in the following order
+# {"None", "2 Pints", "4 Pints"}
+goggles$alcohol<-factor(goggles$alcohol, 
+                            levels = c("None", "2 Pints", "4 Pints"))
+# Recheck the levels
+levels(goggles$alcohol)
+```
+
+
+
+```{r}
+ggplot(data=goggles, aes(x = alcohol, y = attractiveness)) + geom_boxplot() +labs(x = 'Alcohol Consumption', y = 'Attractiveness of the date', title = 'Boxplot for beer goggles effect')
+```
+
+
+```{r}
+ggplot(data=goggles, aes(x=gender, y=attractiveness))+geom_boxplot()+
+ labs(x = 'Gender', y = 'Attractiveness of the date by gender', title = 'Attractiveness of the date by gender')
+
+```
+
+
+```{r}
+ggplot(data=goggles, aes(x=alcohol, y=attractiveness))+geom_boxplot()+
+  facet_grid(.~gender)+ylab('Attractiveness of the date') +
+  labs(x = 'Alcohol Consumption', title = 'Attractiveness of the date by level of Alcohol')  
+```
+
+
+\pagebreak
+```{r}
+ggplot(data=goggles, aes(x=alcohol, y=attractiveness))+geom_boxplot()+
+ stat_summary(fun.y = mean, geom = "point", size=3.5, colour = "red")+
+  ylab('Attractiveness of the date')+ xlab('Alcohol Consumpion')
+```
+
+
+
+\pagebreak
+```{r}
+ggplot(data=goggles, aes(x=gender, y=attractiveness))+geom_boxplot()+
+ stat_summary(fun.y = mean, geom = "point", size=3.5, colour = "red")+
+  ylab('Attractiveness of the date')+ xlab('Gender')+
+  ggtitle("Attractiveness of the date by gender")
+```
+
+
+
+\pagebreak
+
+```{r}
+library(ggplot2)
+ggplot(data=goggles, aes(x=alcohol, y=attractiveness))+geom_boxplot()+
+  facet_grid(.~gender)+ylab('Attractiveness of the date')+
+  xlab('Alcohol Consumption')+
+  stat_summary(fun.y = mean, geom = "point", size=3.5, colour = "red")+
+  ggtitle('Attractiveness of the date by level of Alcohol')  
+```
+
+
+
+\pagebreak
+```{r}
+data("UCBAdmissions")
+UCBAdmissions
+```
+
+
+\pagebreak
+
+```{r}
+ucba <- as.data.frame(UCBAdmissions)
+head(ucba)
+```
+
+\pagebreak
+```{r}
+cross <- xtabs(Freq~Gender+Admit, data=ucba)
+prop.table(cross,1)
+```
+
+
+
+\pagebreak
+
+```{r}
+ggplot(ucba, aes(x=Gender, y=Freq, fill=Admit))+
+geom_bar(stat="identity")
+```
+
+\pagebreak
+
+
+```{r}
+ggplot(ucba, aes(x=Gender, y=Freq, fill=Admit))+
+geom_bar(stat="identity", position='fill')+
+  labs(y="Probabilities", title="Admitted/Rejected by Gender")
+```
+
+
+```{r}
+cross <- xtabs(Freq~Gender+Admit, data=ucba[ucba$Dept == 'A',])
+prop.table(cross,1)
+```
+
+```{r}
+cross <- xtabs(Freq~Gender+Admit, data=ucba[ucba$Dept == 'B',])
+prop.table(cross,1)
+```
+
+
+```{r}
+ggplot(ucba, aes(x=Gender, y=Freq, fill=Admit)) +
+geom_bar(stat="identity", position='fill') +
+  facet_grid(~Dept) + labs(y="Probabilities", title="By Department")
+```
+
+
+```{r}
+data('anscombe')
+anscombe
+```
+
+
+
+
+```{r}
+apply(anscombe,2, FUN = 'mean')
+```
+
+```{r}
+apply(anscombe,2, FUN = 'sd')
+```
+
+```{r}
+cor(anscombe)
+```
+
+
+###dplyr
+
+
+```{r}
+data(mtcars)
+apply(mtcars, 2, mean)
+```
+
+```{r}
+apply(mtcars, 1, mean)
+```
+
+```{r}
+a <- apply(mtcars, 2, quantile, probs=c(.25,.5, .75))
+class(a)
+a
+```
+
+
+
+
+```{r}
+normalize <- function(x) {
+    return ((x - min(x)) / (max(x) - min(x)))
+  }
+```
+
+
+```{r}
+mtcars_norm <- apply(mtcars, 2, normalize)
+class(mtcars_norm)
+mtcars_norm <- as.data.frame(mtcars_norm)
+head(mtcars_norm)
+```
+
+```{r}
+mtcars_norm1 <- apply(mtcars, 2, function(x) (x - min(x)) / (max(x) - min(x)))
+mtcars_norm1 <- as.data.frame(mtcars_norm1)
+head(mtcars_norm1, n=4)
+```
+
+```{r}
+identical(mtcars_norm, mtcars_norm1)
+```
+
+
+```{r}
+lapply(mtcars,mean)
+```
+
+
+
+```{r}
+l1 <- list(
+  x = matrix(rnorm(50), ncol=5),
+  y = matrix(rnorm(30), nrow=3),
+  z = 1:25
+)
+l1
+```
+
+```{r}
+lapply(l1, mean)
+sapply(l1, mean)
+```
+
+
+\pagebreak
+```{r}
+movies <- read.csv("movies3.csv", stringsAsFactors = F)
+sapply(movies, is.numeric)
+```
+
+\pagebreak
+```{r}
+movies_num <- movies[,sapply(movies, is.numeric)]
+summary(movies_num)
+```
+
+
+```{r}
+summer <- read.csv("summer.csv", stringsAsFactors = F)
+library(dplyr)
+summer_usa <- summer %>% filter(Country=="USA")
+table(summer_usa$Country, summer_usa$Medal)
+```
+
+\pagebreak
+```{r}
+summer %>%
+  filter(Country %in% c("USA", "FRA", "GBR")) %>%
+  group_by(Country) %>%
+  summarise(Count=n())
+```
+
+\pagebreak
+```{r}
+summer %>%
+  filter(Country %in% c("USA", "FRA", "GBR")) %>%
+  group_by(Country, Medal) %>%
+  summarise(Count=n())
+```
+
+
+\pagebreak
+
+
+```{r}
+summer %>%
+  filter(Country %in% c("USA", "FRA", "GBR")) %>%
+  group_by(Country, Medal) %>%
+  summarise(Count=n()) %>%
+  ggplot(aes(x=Medal, y=Count, fill=Medal))+geom_bar(stat="identity")+
+  facet_grid(.~Country)
+```
+
+\pagebreak
+```{r}
+movies <- read.csv("movies3.csv")
+```
+
+
+```{r}
+sum_movie <- movies %>%
+  group_by(genre_first) %>%
+  summarise(count=n(), mean = mean(gross_adjusted), 
+            standard_dev = sd (gross_adjusted)) %>%
+  arrange(desc(mean))
+head(sum_movie)
+```
+
+
+```{r}
+ggplot(sum_movie, aes(x=mean, y=standard_dev, size=count))+geom_point()
+```
+
+
+\pagebreak
+
+```{r}
+ggplot(sum_movie, aes(x=mean, y=standard_dev, size=count))+geom_point()+
+  geom_text(aes(label=genre_first), size=3)+
+  labs(x="Mean", y="Standard Deviation", title="Mean vs Standard Deviation for genres")
+```

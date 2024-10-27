@@ -7,3 +7,9 @@
 # Allow specific files or folders
 !README.md
 !specific_folder/
+.Rproj.user
+
+!DS116*/**/Data/
+!DS116*/**/Img/
+!DS116*/**/*.Rmd
+!DS116*/**/*.pdf

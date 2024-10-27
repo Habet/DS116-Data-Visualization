@@ -9,6 +9,7 @@
 !specific_folder/
 .Rproj.user
 
+!DS116*/
 !DS116*/**/Data/
 !DS116*/**/Img/
 !DS116*/**/*.Rmd

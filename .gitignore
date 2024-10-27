@@ -13,3 +13,4 @@
 !DS116*/**/Img/
 !DS116*/**/*.Rmd
 !DS116*/**/*.pdf
+!DS116*/**/latex-topmatter.tex

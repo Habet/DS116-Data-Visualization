@@ -21,7 +21,6 @@ options(scipen = 999)
 library(ggplot2)
 library(knitr)
 library(dplyr)
-library(reticulate)
 library(formatR)
 library(sf)
 library(raster)
@@ -458,33 +457,14 @@ Our shape object has attributes tied to given polygons, such as Population, Name
 
 \scriptsize
 ```{r, out.height='70%'}
-ggplot(data = arm, aes(fill = Total_Popu)) + geom_sf()
-```
-
-## Geospatial Data Visualization
-
-The variable is a character, need to transform to numeric first.
-
-\scriptsize
-```{r}
-arm$Total_Popu
-```
-
-
-## Geospatial Data Visualization
-
-Remove white spaces
-
-```{r}
-arm$Total_Popu <- gsub(pattern = " ", x = arm$Total_Popu, 
-                    replacement = "") %>%  as.numeric()
+ggplot(data = arm, aes(fill = Ttl_Ppl)) + geom_sf()
 ```
 
 
 ## Geospatial Data Visualization
 
 ```{r, out.height='70%'}
-ggplot(data = arm, aes(fill = Total_Popu)) + geom_sf() + 
+ggplot(data = arm, aes(fill = Ttl_Ppl)) + geom_sf() + 
   scale_fill_viridis_c()
 ```
 
@@ -494,7 +474,7 @@ ggplot(data = arm, aes(fill = Total_Popu)) + geom_sf() +
 ```{r, out.height='65%'}
 arm_state <- arm[-6, ]
 
-ggplot(data = arm_state, aes(fill = Total_Popu)) + geom_sf() + 
+ggplot(data = arm_state, aes(fill = Ttl_Ppl)) + geom_sf() + 
   scale_fill_viridis_c()
 
 ```

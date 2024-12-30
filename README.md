@@ -25,3 +25,5 @@ The order of the lectures according to syllabus:
 9.  DS116 - Time series visualization
 
 10. DS116 - Spatial data visualization
+
+11. DS116 - PCA and clusters visualization

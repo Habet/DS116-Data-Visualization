@@ -2,6 +2,17 @@
 
 These are lecture notes, slides, and R Markdown files for the DS116 Data Visualization course, developed and prepared by Dr. Habet Madoyan at the American University of Armenia.
 
+These lecture notes would not be what they are without the invaluable help and constructive feedback from those who worked with me as teaching assistants/associates. Their support has been instrumental in refining and developing these materials.
+
+- Anna Drnoian,
+- Erik Hambardzumyan
+- Alen Adamyan
+- Gevorg Atanesyan
+- Gurgen Hovakimyan
+- Narek Sahakyan
+- Ani Gumruyan
+
+
 The order of the lectures according to syllabus:
 
 1.  DS116 - Intro to R

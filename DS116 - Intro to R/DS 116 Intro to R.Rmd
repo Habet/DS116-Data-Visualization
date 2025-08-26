@@ -660,36 +660,6 @@ my_list
 ```
 
 
-## Data Structures
-
-The unlist() function will flatten the list into a vector
-
-```{r}
-z <- unlist(my_list)
-z
-```
-
-
-## Data Structures
-
-**Attributes**
-
-\hfill\break
-
-- All objects can have arbitrary additional attributes, used to store metadata about the object. 
-- Attributes can be thought of as a named list (with unique names). 
-- Attributes can be accessed individually with attr() or all at once (as a list) with attributes().
-
-```{r}
-attr(df_seriea, "topic") <- "sports"
-df_seriea
-```
-
-```{r}
-attr(df_seriea, "topic")
-```
-
-
 # Data Types
 
 ## Data Types

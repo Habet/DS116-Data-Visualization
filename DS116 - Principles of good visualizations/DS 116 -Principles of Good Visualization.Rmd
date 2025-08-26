@@ -250,13 +250,6 @@ Distortion in Data graphic
 
 $$\text{percieved area =} (\text{actual area})^x, \text{where x}= 0.8 \pm {0.3}  $$
 
-## Principles of good visualization: Principle 1
-
-- As an example, the visual perception of length of the line depends on the context and what other people think.
-
-Look at the Solomon Ash Experiment.
-
-https://www.youtube.com/watch?v=iRh5qy09nNw
 
 ## Principles of good visualization: Principle 1
 

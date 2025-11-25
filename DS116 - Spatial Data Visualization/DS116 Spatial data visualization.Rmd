@@ -16,7 +16,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, tidy = F,warning=F, message = F, error = T, size = 'footnotesize')
+knitr::opts_chunk$set(echo = TRUE, tidy = F,warning=F, message = F, error = F, size = 'footnotesize')
 options(scipen = 999)
 library(ggplot2)
 library(knitr)
@@ -187,8 +187,7 @@ arm_sf <- st_read('Data/Armenia_Marzes/Armenia_Marzes.shp', quiet = TRUE)
 arm_df <- arm_sf %>% group_by(MarzID) %>% 
     st_cast("POINT")
 
-
-arm_df = data.frame(Marz = arm_df$Name_Eng, st_coordinates(arm_df))
+arm_df = data.frame(Marz = arm_df$Name, st_coordinates(arm_df))
 
 head(arm_df)
 ```
@@ -386,7 +385,7 @@ arm_df <- arm_sf %>% group_by(MarzID) %>%
     st_cast("POINT")
 
 
-arm_df = data.frame(Marz = arm_df$Name_Eng, st_coordinates(arm_df))
+arm_df = data.frame(Marz = arm_df$Name, st_coordinates(arm_df))
 
 ```
 
@@ -511,7 +510,7 @@ Use dplyr to join two datasets together
 
 \small
 ```{r}
-arm <- arm %>% left_join(gdp, by = c('Name_Eng' = "Region"))
+arm <- arm %>% left_join(gdp, by = c('Name' = "Region"))
 arm$Per_Capita_gdp
 ```
 
@@ -533,7 +532,7 @@ sf object can be filtered and slices using dplyr, just like any other object
 
 \scriptsize
 ```{r, out.height='70%'}
-arm %>% filter(Name_Eng == 'SYUNIK') %>% 
+arm %>% filter(Name == 'SYUNIK') %>% 
   ggplot() + geom_sf()
 ```
 

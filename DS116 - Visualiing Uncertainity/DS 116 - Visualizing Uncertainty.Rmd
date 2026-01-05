@@ -23,7 +23,6 @@ options(scipen = 999)
 library(knitr)
 library(ggplot2)
 library(dplyr)
-library(reticulate)
 library(Hmisc)
 library(HistData)
 ```
@@ -218,7 +217,7 @@ We can visualize confidence intervals with error bars as well
 
 
 ```{r, eval = F}
-ggplot(movies_small, aes(x = year, y = gross_adjusted)) + 
+ggplot(movies_small, aes(x = year, y = imdbRating)) + 
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
   stat_summary(fun = mean, geom='point', color = 'red')
 ```
@@ -226,7 +225,7 @@ ggplot(movies_small, aes(x = year, y = gross_adjusted)) +
 ## Confidence Intervals
 
 ```{r, echo = F}
-ggplot(movies_small, aes(x = year, y = gross_adjusted)) + 
+ggplot(movies_small, aes(x = year, y = imdbRating)) + 
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
   stat_summary(fun = mean, geom='point', color = 'red')
 ```

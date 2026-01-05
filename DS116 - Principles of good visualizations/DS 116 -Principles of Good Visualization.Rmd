@@ -20,7 +20,6 @@ knitr::opts_chunk$set(echo = TRUE, tidy = F,  collapse = TRUE, warning=F, messag
 options(scipen = 999)
 library(ggplot2)
 library(dplyr)
-library(reticulate)
 library(Hmisc)
 library(HistData)
 library(knitr)

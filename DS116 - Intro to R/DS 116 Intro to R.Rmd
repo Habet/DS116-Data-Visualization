@@ -35,12 +35,7 @@ library(dplyr)
 - Go to [RStudio](https://www.rstudio.com/products/rstudio/download/) and install RStudio IDE
 - You need to install R before installing RStudio
 
-\hfill\break
 
-**Alternatives**
-
-- Install [Microsoft R](https://mran.microsoft.com/open)
-- Use Microsoft Visual Studio (free version available)
 
 ```{r, echo = F, out.height = '40%', out.width = '30%', fig.align = 'right'}
 include_graphics('Img/R.jpg')
@@ -1924,7 +1919,7 @@ summer %>%
 
 ## Grammar of data manipulation
 
-Number of medals by country (is this long or wide format?)
+Number of medals by country
 
 ```{r}
 summer %>%
@@ -1933,15 +1928,4 @@ summer %>%
   summarise(Count=n())
 ```
 
-
-## Grammar of data manipulation
-
-Using ggplot with dplyr
-
-```{r, out.height= "50%"}
-summer %>%
-  filter(Country %in% c("USA", "FRA", "GBR")) %>%
-  group_by(Country, Medal) %>%
-  summarise(Count=n())
-```
 

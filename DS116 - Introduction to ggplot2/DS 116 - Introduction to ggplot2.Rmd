@@ -6,9 +6,12 @@ institute: "American University of Armenia"
 fontsize: 10pt
 output:
   beamer_presentation:
-    theme: "Frankfurt"
+    theme: "CambridgeUS"
     colortheme: "dolphin"
     fonttheme: "structurebold"
+    pandoc_args: '--pdf-engine=xelatex'
+    includes:
+      in_header: 'latex-topmatter.tex'
 ---
 
 
@@ -21,7 +24,6 @@ library(dplyr)
 library(knitr)
 library(Hmisc)
 library(HistData)
-library(ggthemes)
 library(gridExtra)
 ```
 
@@ -869,33 +871,7 @@ ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point() +
   theme_classic()
 ```
 
-## ggplot2: guides and themes
 
-There are lot of themes available in different packages
-
-```{r, eval=F}
-install.packages('ggthemes')
-library(ggthemes)
-```
-
-
-## ggplot2: guides and themes
-
-The Economist style
-
-```{r, out.height='67%'}
-plot1 <- ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point() 
-plot1 + theme_economist()
-```
-
-
-## ggplot2: guides and themes
-
-Theme of [FiveThirtyEight](https://fivethirtyeight.com)
-
-```{r, out.height='65%'}
-plot1 + theme_fivethirtyeight()
-```
 
 
 ## ggplot2: guides and themes

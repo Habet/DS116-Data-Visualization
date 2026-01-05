@@ -582,7 +582,7 @@ head(cor_mat)
 
 ## Correlation heatmaps
 
-Then use geom_tile() or geom_raster() to draw rectangles
+We use geom_tile() to draw rectangles
 
 ```{r, out.height='60%'}
 ggplot(data = cor_mat, aes(x=Var1, y=Var2, fill=value)) + 
@@ -742,7 +742,7 @@ Additional aesthetics - z
 \scriptsize
 ```{r, out.height='65%'}
 ggplot(data = fujitopo, aes(x = lon, y = lat, z = z)) + 
-  geom_contour() + theme_void()
+  geom_contour()
 ```
 
 

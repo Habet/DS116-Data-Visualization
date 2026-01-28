@@ -472,6 +472,41 @@ Different result
 ```
 
 
+How can we swap the order of the arguments and still have the same result ? 
+
+## Data Sctructures
+
+If arguments are not named, the method matches the arguments based on the positions, so the first argument is considered as data, the second as nrow, and so on.
+
+```{r}
+(m <- matrix(nrow=3, data=1:15))
+```
+
+## Data Sctructures
+
+What will be the output of the following expression ?
+
+```{r}
+mixed_arguments_matrix_1 <- matrix(ncol = 3, nrow = 2, FALSE, (1:6))
+```
+
+
+What about this one ? 
+
+```{r}
+mixed_arguments_matrix_2 <- matrix(ncol = 3, nrow = 2, (1:6), T)
+```
+
+
+## Data Sctructures
+
+The named arguments are handled out of the order, so the remaining arguments are treated as a regular positional argument, with the named ones being removed from the list of positional arguments.
+
+```{r}
+(mixed_arguments_matrix_1)
+(mixed_arguments_matrix_2)
+```
+
 ## Data Structures
 
 Other ways of building a matrix
@@ -502,7 +537,6 @@ colnames(m1)
 rownames(m1)
 ```
 
-
 ## Data Structures
 
 - Combine together by column
@@ -521,6 +555,12 @@ colnames(m2)
 ```{r}
 rownames(m2)
 ```
+
+
+<!-- ```{r} -->
+<!-- median(x = (1:10)) -->
+<!-- median(x <- (1:10)) -->
+<!-- ``` -->
 
 
 ## Data Structures
@@ -557,6 +597,103 @@ m2[1:3,]
 ```{r}
 m2[c('A', 'B', 'C'),]
 ```
+
+
+
+## Data Structures
+
+What about combining two vectors of different sizes into a matrix ? 
+
+```{r}
+matrix1 <- rbind(c(1:5), c(1:10), c(1:3))
+(is.matrix(matrix1))
+```
+
+## Data Structures
+
+The result:
+```{r}
+(matrix1)
+```
+\vspace{2cm}
+
+R adjusts the length of the shorter vectors by recycling their elements until they match the length of the longest vector.
+
+
+## Data Structures
+
+The same happens with cbind
+```{r}
+(matrix2 <- cbind(c(1:5), c(1:10), c(1:3)))
+```
+
+
+## Data Structures
+
+What will happen if you combine vectors of different types ? 
+
+Scenario 1
+```{r}
+a <- (1:5)
+b <- c("1","2","3","4","5")
+
+c_matrix <- rbind(a,b)
+```
+
+Scenario 2
+
+```{r}
+a1 <- c(1,2,3,4,5)
+b1 <- c(TRUE, FALSE, TRUE, FALSE, TRUE)
+c_matrix1 <- cbind(a1,b1)
+```
+
+Scenario 3
+
+```{r}
+a2 <- c(1,2,3,4,5)
+b2 <- c("1","2","3","A","5")
+c_matrix2 <- rbind(a2,b2)
+```
+
+## Data Structures
+
+Check the structure of the resulting objects
+```{r}
+(c_matrix)
+(c_matrix1)
+(c_matrix2)
+```
+
+
+## Data Structures
+
+What will happen in this scenario ? 
+
+```{r}
+c_matrix <- rbind(c("TRUE","FALSE"), c(TRUE, FALSE), c(1,0))
+```
+
+## Data Structures
+
+The result:
+
+```{r}
+(c_matrix)
+```
+
+\vspace{1cm}
+
+This happens of R's built in implicit coercion rules, however you can use explicit coercion to control the choice of the data type
+
+```{r}
+(c_matrix <- rbind(
+  as.numeric(c("1","2")),
+  as.numeric(c(TRUE, FALSE)),
+  c(1,0))
+)
+```
+
 
 
 ## Data Structures: Data frame
@@ -1480,6 +1617,21 @@ norm <- function(x) {
 norm(mtcars$mpg)
 ```
 
+## Functions 
+
+Different ways of assigning values to variables inside functions,
+when using <- the value of the argument will be stored inside the variable in the environment.
+
+```{r}
+x <- c(1,2,3)
+(median(x = (1:10)))
+(x)
+```
+
+```{r}
+(median(x <- (1:10)))
+(x)
+```
 
 
 
@@ -1927,5 +2079,16 @@ summer %>%
   group_by(Country, Medal) %>%
   summarise(Count=n())
 ```
+
+
+## Grammer of data manipulation
+
+In class assignment 
+
+
+* Load the built in mtcars dataset
+* Create a new variable called liters_per_100km, which is equal to 235.214 divided by mpg
+* Group by the cars based on the number of cylinders and summarise the average liters_per_100km for each group
+* Filter the cars which consume more than 12 liters per 100 km and arrange them in descending order based on liters_per_100km
 
 

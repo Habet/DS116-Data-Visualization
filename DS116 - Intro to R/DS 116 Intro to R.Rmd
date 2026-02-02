@@ -1,7 +1,7 @@
 ---
 title: "DS116  - Data Visualization"
 subtitle: "Intro to R"
-author: "Habet Madoyan"
+author: "Habet Madoyan, Narek Sahakyan"
 institute: "American University of Armenia" 
 fontsize: 10pt
 output:
@@ -24,6 +24,8 @@ options(scipen = 999)
 library(devtools)
 library(knitr)
 library(dplyr)
+library(tidyr)
+library(ggplot2)
 ```
 
 
@@ -794,6 +796,206 @@ my_list
 
 # Data Types
 
+## Quantitative vs Qualitative Data
+
+Before diving into R data types, it's important to understand the two main categories of data:
+
+\hfill\break
+
+**Quantitative (Numerical) Data**
+
+- Represents quantities or amounts
+- Can be measured and expressed as numbers
+- Supports mathematical operations (addition, averaging, etc.)
+- Examples: age, height, temperature, number of students
+
+\hfill\break
+
+**Qualitative (Categorical) Data**
+
+- Represents qualities or characteristics
+- Describes categories or groups
+- Cannot be meaningfully averaged or summed
+- Examples: gender, eye color, student grades (A, B, C), country names
+
+
+## Quantitative Data: Types and Examples
+
+**Discrete Quantitative Data**
+
+- Countable, whole numbers only
+- Examples: number of students, number of cars, count of errors
+
+```{r}
+students_per_class <- c(25, 30, 28, 32, 27)
+sum(students_per_class)
+mean(students_per_class)
+```
+
+\hfill\break
+
+**Continuous Quantitative Data**
+
+- Can take any value within a range (including decimals)
+- Examples: height, weight, temperature, time
+
+```{r}
+heights <- c(165.5, 172.3, 168.0, 175.8, 160.2)
+mean(heights)
+range(heights)
+```
+
+
+## Qualitative Data: Types and Examples
+
+**Nominal Data**
+
+- Categories with no natural order
+- Examples: colors, countries, gender, blood type
+
+```{r}
+eye_colors <- c("Brown", "Blue", "Green", "Brown", "Blue", "Brown")
+table(eye_colors)
+```
+
+\hfill\break
+
+**Ordinal Data**
+
+- Categories WITH a natural order
+- Examples: grades (A > B > C), satisfaction (High > Medium > Low)
+
+```{r}
+grades <- c("A", "B", "A", "C", "B", "A", "B", "C", "D", "B")
+table(grades)
+```
+
+
+## Representing Qualitative Data in R
+
+**Character vectors** - simple storage, no order
+
+```{r}
+colors <- c("Red", "Blue", "Green", "Red")
+class(colors)
+```
+
+\hfill\break
+
+**Factors** - categorical data with defined levels
+
+```{r}
+colors_factor <- factor(colors)
+levels(colors_factor)
+```
+
+\hfill\break
+
+```{r}
+grades <- c("B", "A", "C", "B", "A")
+grades_ordered <- factor(grades, 
+                         levels = c("D", "C", "B", "A"),
+                         ordered = TRUE)
+grades_ordered
+```
+
+
+## Why Ordered Factors Matter
+
+Ordered factors allow meaningful comparisons:
+
+```{r}
+student_grades <- factor(c("B", "A", "C", "B", "D", "A"),
+                         levels = c("D", "C", "B", "A"),
+                         ordered = TRUE)
+```
+
+\hfill\break
+
+```{r}
+student_grades[1] > student_grades[3]
+```
+
+\hfill\break
+
+```{r}
+student_grades[student_grades >= "B"]
+```
+
+
+## Practical Example: Student Dataset
+
+```{r}
+students <- data.frame(
+  student_id = 1:6,
+  num_courses = c(5, 4, 6, 5, 4, 5),
+  gpa = c(3.5, 3.8, 3.2, 3.9, 3.6, 3.4),
+  major = c("CS", "DS", "EC", "CS", "DS", "EC"),
+  year = factor(c("Junior", "Senior", "Sophomore", "Senior", "Junior", "Freshman"),
+                levels = c("Freshman", "Sophomore", "Junior", "Senior"),
+                ordered = TRUE)
+)
+str(students)
+```
+
+
+## Working with Different Data Types
+
+```{r}
+cat("Average GPA:", mean(students$gpa), "\n")
+cat("Total courses:", sum(students$num_courses), "\n")
+```
+
+\hfill\break
+
+```{r}
+table(students$major)
+```
+
+\hfill\break
+
+```{r}
+advanced_students <- students[students$year >= "Junior", ]
+advanced_students[, c("student_id", "year", "gpa")]
+```
+
+
+## Choosing the Right Data Type
+
+| Data Type | R Representation | Operations | Example |
+|-----------|------------------|------------|---------|
+| Discrete quantitative | integer/numeric | math operations | `num_students` |
+| Continuous quantitative | numeric | math operations | `height`, `gpa` |
+| Nominal categorical | factor (unordered) | frequencies | `color`, `major` |
+| Ordinal categorical | factor (ordered) | frequencies + comparison | `grade`, `year` |
+
+\hfill\break
+
+**Key principle:** Choose the data type that accurately represents your data's nature and enables the analyses you need to perform.
+
+
+## Common Mistakes to Avoid
+
+**Mistake 1:** Treating categorical data as numeric
+
+```{r}
+zip_codes <- c(10001, 90210, 30301)
+mean(zip_codes)
+```
+
+\hfill\break
+
+**Mistake 2:** Forgetting to order ordinal data
+
+```{r}
+satisfaction <- factor(c("High", "Low", "Medium", "High"))
+satisfaction_ordered <- factor(c("High", "Low", "Medium", "High"),
+                               levels = c("Low", "Medium", "High"),
+                               ordered = TRUE)
+satisfaction_ordered[1] > satisfaction_ordered[2]
+```
+
+
 ## Data Types
 
 Data types used in R
@@ -1082,6 +1284,334 @@ R can work with other data files as well
 - XML
 - HTML
 - Etc.
+
+
+# Exploring Data: Built-in Functions
+
+## Exploring Data: Overview
+
+After importing data, the first step is always to **explore and understand** your data. R provides several built-in functions for this purpose:
+
+\hfill\break
+
+| Function | Purpose |
+|----------|---------|
+| `str()` | Structure of the object |
+| `summary()` | Statistical summary |
+| `head()` / `tail()` | First/last rows |
+| `dim()` | Dimensions (rows, columns) |
+| `nrow()` / `ncol()` | Number of rows/columns |
+| `names()` / `colnames()` | Column names |
+| `class()` / `typeof()` | Object type |
+| `View()` | Interactive data viewer |
+
+
+## str() - Structure of Data
+
+`str()` displays the **internal structure** of an R object. It's one of the most useful functions for understanding your data.
+
+```{r}
+str(winter)
+```
+
+\hfill\break
+
+**What str() shows:**
+
+- Object type (data.frame, list, etc.)
+- Number of observations and variables
+- Column names and their data types
+- First few values of each column
+
+
+## str() - Examples with Different Objects
+
+```{r}
+nums <- c(10, 20, 30, 40, 50)
+str(nums)
+```
+
+\hfill\break
+
+```{r}
+my_list <- list(name = "John", age = 25, scores = c(85, 90, 88))
+str(my_list)
+```
+
+\hfill\break
+
+```{r}
+mat <- matrix(1:12, nrow = 3, ncol = 4)
+str(mat)
+```
+
+
+## summary() - Statistical Summary
+
+`summary()` provides a **statistical summary** appropriate for each column type.
+
+```{r}
+summary(winter)
+```
+
+
+## summary() - Interpretation
+
+**For numeric columns**, summary() shows:
+
+- **Min** - minimum value
+- **1st Qu** - first quartile (25th percentile)
+- **Median** - middle value (50th percentile)
+- **Mean** - arithmetic average
+- **3rd Qu** - third quartile (75th percentile)
+- **Max** - maximum value
+
+\hfill\break
+
+**For character/factor columns**, summary() shows:
+
+- Length (for character)
+- Frequency counts (for factor)
+
+```{r}
+summary(winter$Year)
+```
+
+
+## head() and tail() - First/Last Rows
+
+`head()` shows the **first n rows** (default 6), `tail()` shows the **last n rows**.
+
+```{r}
+head(winter, n = 5)
+```
+
+\hfill\break
+
+```{r}
+tail(winter, n = 3)
+```
+
+
+## dim(), nrow(), ncol() - Dimensions
+
+These functions tell you the **size** of your data.
+
+```{r}
+dim(winter)
+```
+
+\hfill\break
+
+```{r}
+nrow(winter)
+```
+
+\hfill\break
+
+```{r}
+ncol(winter)
+```
+
+\hfill\break
+
+```{r}
+length(c(1, 2, 3, 4, 5))
+```
+
+
+## names() and colnames() - Column Names
+
+```{r}
+names(winter)
+```
+
+\hfill\break
+
+```{r}
+colnames(winter)
+```
+
+\hfill\break
+
+```{r}
+head(rownames(winter))
+```
+
+
+## class() and typeof() - Object Types
+
+`class()` returns the **high-level class**, `typeof()` returns the **internal storage type**.
+
+```{r}
+class(winter)
+class(winter$Year)
+class(winter$Sport)
+```
+
+\hfill\break
+
+```{r}
+typeof(winter)
+typeof(winter$Year)
+typeof(TRUE)
+```
+
+
+## Checking Object Types: is.* Functions
+
+R provides many `is.*` functions to check object types:
+
+```{r}
+is.data.frame(winter)
+```
+
+\hfill\break
+
+```{r}
+is.numeric(winter$Year)
+```
+
+\hfill\break
+
+```{r}
+is.character(winter$Sport)
+```
+
+\hfill\break
+
+```{r}
+is.vector(c(1, 2, 3))
+is.matrix(matrix(1:4, 2, 2))
+is.na(c(1, NA, 3))
+```
+
+
+## unique() and duplicated() - Finding Unique Values
+
+```{r}
+unique(winter$Sport)
+```
+
+\hfill\break
+
+```{r}
+length(unique(winter$Sport))
+```
+
+
+## unique() and duplicated() - continued
+
+```{r}
+sample_data <- c("A", "B", "A", "C", "B")
+duplicated(sample_data)
+```
+
+\hfill\break
+
+```{r}
+sample_data[duplicated(sample_data)]
+```
+
+\hfill\break
+
+```{r}
+unique(sample_data)
+```
+
+
+## table() - Frequency Tables
+
+`table()` creates **frequency counts** for categorical data.
+
+```{r}
+table(winter$Medal)
+```
+
+\hfill\break
+
+```{r}
+head(table(winter$Country, winter$Medal), 10)
+```
+
+
+## which() - Finding Positions
+
+`which()` returns the **indices** where a condition is TRUE.
+
+```{r}
+gold_positions <- which(winter$Medal == "Gold")
+head(gold_positions, 10)
+```
+
+\hfill\break
+
+```{r}
+scores <- c(75, 92, 88, 95, 81)
+which.max(scores)
+which.min(scores)
+```
+
+\hfill\break
+
+```{r}
+scores[which.max(scores)]
+max(scores)
+```
+
+
+## View() - Interactive Data Viewer
+
+`View()` opens an **interactive spreadsheet-like viewer** in RStudio.
+
+```{r, eval=FALSE}
+View(winter)
+```
+
+\hfill\break
+
+**View() features:**
+
+- Sortable columns (click column headers)
+- Searchable (filter box)
+- Navigate large datasets easily
+- Read-only (cannot edit data)
+
+
+
+## Practical Example: Exploring a Dataset
+
+```{r}
+data(mtcars)
+
+
+cat("Dimensions:", dim(mtcars), "\n")
+cat("Column names:", paste(names(mtcars), collapse = ", "), "\n")
+cat("Missing values:", sum(is.na(mtcars)), "\n")
+```
+
+\hfill\break
+
+```{r}
+summary(mtcars[, c("mpg", "hp", "wt")])
+```
+
+
+## Summary: Essential Exploration Functions
+
+| Task | Function | Example |
+|------|----------|---------|
+| See structure | `str()` | `str(df)` |
+| Statistical summary | `summary()` | `summary(df)` |
+| First rows | `head()` | `head(df, 10)` |
+| Last rows | `tail()` | `tail(df, 5)` |
+| Dimensions | `dim()` | `dim(df)` |
+| Column names | `names()` | `names(df)` |
+| Object type | `class()` | `class(df)` |
+| Unique values | `unique()` | `unique(df$col)` |
+| Frequencies | `table()` | `table(df$col)` |
+| Find positions | `which()` | `which(df$col > 5)` |
+| Interactive view | `View()` | `View(df)` |
 
 
 # Subsetting Data
@@ -1771,6 +2301,761 @@ oil$DAY <- as.numeric(oil$DAY)
 head(oil)
 ```
 
+# Data Transformation: dplyr
+
+## Grammar of data manipulation
+
+dplyr is a grammar of data manipulation, providing a consistent set of verbs that help you solve the most common data manipulation challenges:
+
+- **mutate()** adds new variables that are functions of existing variables
+- **select()** picks variables based on their names.
+- **filter()** picks cases based on their values.
+- **summarise()** reduces multiple values down to a single summary.
+- **arrange()** changes the ordering of the rows.
+
+\hfill\break
+
+These all combine naturally with group_by() which allows you to perform any operation "by group".
+
+
+## Grammar of data manipulation
+
+- Not necessary, but dplyr works the best with pipe like operator from **magrittr** package
+- \%\>\% operator takes the object from its left-hand side and use it as an argument in the function on the right-hand side 
+
+\hfill\break
+
+```{r, echo = F, out.width = "40%", fig.align='right'}
+include_graphics('Img/magrittr.jpg')
+```
+
+
+## Grammar of data manipulation
+
+- The "pipe" operation is a handy tool to make your code more legible: %>%. 
+\hfill\break
+
+Key points:
+
+- It takes the output of your previous operation and uses it as an input to your next operation.
+- You can determine where the previous argument goes with the period symbol, . , which acts as a placeholder.
+- Understand how to use it by replacing the pipe operation with "then" (in your mind, not in the code). For example, **filter(data, ...) \%\>\% select(...)** filters first then selects columns from the output of filter.
+
+
+## Grammar of data manipulation
+
+Filtering USA games only
+
+```{r}
+summer <- read.csv("Data/summer.csv", stringsAsFactors = F)
+```
+
+```{r}
+summer_usa <- summer %>% filter(Country=="USA")
+```
+
+```{r}
+table(summer_usa$Country, summer_usa$Medal)
+```
+
+
+## Grammar of data manipulation
+
+Filter and group_by
+
+```{r}
+summer %>%
+  filter(Country %in% c("USA", "FRA", "GBR")) %>%
+  group_by(Country) %>%
+  summarise(Count=n())
+```
+
+\hfill\break
+
+- The result is a tibble
+- Count=n() creates a new variable named Count with frequencies, n() calculates frequencies
+
+
+## Grammar of data manipulation
+
+Number of medals by country
+
+```{r}
+summer %>%
+  filter(Country %in% c("USA", "FRA", "GBR")) %>%
+  group_by(Country, Medal) %>%
+  summarise(Count=n())
+```
+
+
+# Summary Functions
+
+## Summary Functions: Overview
+
+Summary functions take a vector of values and return a single value. They are essential for understanding your data.
+
+\hfill\break
+
+**Common summary functions:**
+
+- `mean()` - arithmetic average
+- `median()` - middle value
+- `min()` / `max()` - minimum and maximum
+- `sum()` - total of all values
+- `sd()` / `var()` - standard deviation and variance
+- `n()` - count (in dplyr context)
+- `first()` / `last()` - first and last values
+- `quantile()` - percentiles
+
+
+## Summary Functions: Basic Examples
+
+```{r}
+scores <- c(85, 92, 78, 95, 88, 72, 90, 85, 91, 76)
+```
+
+\hfill\break
+
+```{r}
+(mean(scores))
+(median(scores))
+```
+
+\hfill\break
+
+```{r}
+(sd(scores))
+(var(scores))
+```
+
+
+## Mean vs Median: Key Differences
+
+**Mean (Arithmetic Average)**
+
+- Calculated by summing all values and dividing by the count
+- Formula: $\bar{x} = \frac{\sum_{i=1}^{n} x_i}{n}$
+- **Sensitive to outliers** - extreme values pull the mean toward them
+- Best for symmetric, normally distributed data
+
+\hfill\break
+
+**Median (Middle Value)**
+
+- The value that separates the higher half from the lower half
+- **Robust to outliers** - extreme values don't affect it much
+- Best for skewed data or when outliers are present
+
+
+## Mean vs Median: Outlier Sensitivity
+
+```{r}
+salaries <- c(45, 52, 48, 55, 50, 47, 53, 49, 51, 46)
+
+mean(salaries)
+median(salaries)
+```
+
+\hfill\break
+
+```{r}
+salaries_with_ceo <- c(salaries, 500)
+
+mean(salaries_with_ceo)
+median(salaries_with_ceo)
+```
+
+
+## When to Use Mean vs Median
+
+| Situation | Use Mean | Use Median |
+|-----------|----------|------------|
+| Symmetric data | Yes | Yes |
+| Skewed data | No | **Yes** |
+| Data with outliers | No | **Yes** |
+| Income/salary data | No | **Yes** |
+| Test scores (no outliers) | **Yes** | Yes |
+| Scientific measurements | **Yes** | Sometimes |
+
+\hfill\break
+
+**Rule of thumb:** If mean and median are very different, your data is likely skewed or has outliers. In such cases, prefer the median.
+
+```{r}
+mean(salaries_with_ceo) - median(salaries_with_ceo)
+```
+
+
+## Other Measures of Central Tendency
+
+**Mode** - The most frequently occurring value
+
+- R doesn't have a built-in mode function for general use
+- Useful for categorical data
+
+```{r}
+get_mode <- function(x) {
+  uniq_x <- unique(x)
+  uniq_x[which.max(tabulate(match(x, uniq_x)))]
+}
+
+shoe_sizes <- c(9, 10, 10, 11, 10, 9, 10, 12, 10, 11)
+get_mode(shoe_sizes)
+```
+
+\hfill\break
+
+**Trimmed Mean** - Mean after removing extreme values
+
+```{r}
+mean(salaries_with_ceo, trim = 0.1)
+```
+
+
+## Summary Functions: Range and Extremes
+
+```{r}
+min(scores)
+max(scores)
+```
+
+\hfill\break
+
+```{r}
+range(scores)
+```
+
+\hfill\break
+
+```{r}
+sum(scores)
+```
+
+\hfill\break
+
+```{r}
+length(scores)
+```
+
+
+## Understanding Quantiles
+
+**What are quantiles?**
+
+Quantiles divide your data into equal-sized groups when sorted from smallest to largest.
+
+\hfill\break
+
+**Common quantile types:**
+
+- **Quartiles** (4 groups): Q1 (25%), Q2 (50% = median), Q3 (75%)
+- **Percentiles** (100 groups): e.g., 10th percentile, 90th percentile
+- **Deciles** (10 groups): 10%, 20%, 30%, etc.
+
+\hfill\break
+
+**Interpretation:**
+
+- Q1 (25th percentile): 25% of data falls below this value
+- Q2 (50th percentile): 50% of data falls below (this is the median)
+- Q3 (75th percentile): 75% of data falls below this value
+
+
+## Quantiles in R: Basic Usage
+
+```{r}
+exam_scores <- c(55, 62, 67, 70, 72, 75, 78, 80,
+                 82, 85, 88, 90, 92, 95, 98)
+```
+
+\hfill\break
+
+```{r}
+quantile(exam_scores)
+```
+
+\hfill\break
+
+```{r}
+quantile(exam_scores, probs = c(0.10, 0.90))
+```
+
+\hfill\break
+
+```{r}
+quantile(exam_scores, probs = seq(0, 1, by = 0.1))
+```
+
+
+## Quantiles: Practical Applications
+
+**Use cases for quantiles:**
+
+- **Grading on a curve:** Top 10% get an A
+- **Income analysis:** What salary puts you in the top 25%?
+- **Performance benchmarks:** Is this value above the 90th percentile?
+
+```{r}
+top_25_cutoff <- quantile(exam_scores, 0.75)
+top_25_cutoff
+```
+
+\hfill\break
+
+```{r}
+exam_scores[exam_scores >= top_25_cutoff]
+```
+
+\hfill\break
+
+```{r}
+mean(exam_scores <= 80)
+```
+
+
+## Interquartile Range (IQR)
+
+The **Interquartile Range (IQR)** measures the spread of the middle 50% of your data.
+
+\hfill\break
+
+$$IQR = Q3 - Q1$$
+
+\hfill\break
+
+```{r}
+Q1 <- quantile(exam_scores, 0.25)
+Q3 <- quantile(exam_scores, 0.75)
+
+Q3 - Q1
+```
+
+\hfill\break
+
+```{r}
+IQR(exam_scores)
+```
+
+\hfill\break
+
+## Detecting Outliers with IQR
+
+The **IQR method** is a standard approach for identifying outliers:
+
+**Outlier boundaries:**
+
+- **Lower bound:** $Q1 - 1.5 \times IQR$
+- **Upper bound:** $Q3 + 1.5 \times IQR$
+
+\hfill\break
+
+Any value below the lower bound or above the upper bound is considered an outlier.
+
+```{r}
+Q1 <- quantile(exam_scores, 0.25)
+Q3 <- quantile(exam_scores, 0.75)
+iqr_value <- IQR(exam_scores)
+lower_bound <- Q1 - 1.5 * iqr_value
+upper_bound <- Q3 + 1.5 * iqr_value
+cat("Lower bound:", lower_bound, "\n")
+cat("Upper bound:", upper_bound, "\n")
+```
+
+
+## Detecting Outliers: Practical Example
+
+```{r}
+house_prices <- c(150, 180, 195, 210, 225, 240,
+                  255, 270, 285, 300, 
+                  315, 330, 350, 380, 950)
+```
+
+\hfill\break
+
+```{r}
+Q1 <- quantile(house_prices, 0.25)
+Q3 <- quantile(house_prices, 0.75)
+iqr_val <- IQR(house_prices)
+
+lower <- Q1 - 1.5 * iqr_val
+upper <- Q3 + 1.5 * iqr_val
+
+cat("Q1:", Q1, "| Q3:", Q3, "| IQR:", iqr_val, "\n")
+cat("Lower bound:", lower, "| Upper bound:", upper, "\n")
+```
+
+\hfill\break
+
+```{r}
+outliers <- house_prices[house_prices < lower | house_prices > upper]
+cat("Outliers found:", outliers, "\n")
+```
+
+
+## Creating an Outlier Detection Function
+
+```{r}
+find_outliers <- function(x, multiplier = 1.5) {
+  Q1 <- quantile(x, 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, 0.75, na.rm = TRUE)
+  iqr_val <- IQR(x, na.rm = TRUE)
+  
+  lower <- Q1 - multiplier * iqr_val
+  upper <- Q3 + multiplier * iqr_val
+  
+  outliers <- x[x < lower | x > upper]
+  
+  list(
+    lower_bound = lower,
+    upper_bound = upper,
+    outliers = outliers,
+    outlier_count = length(outliers)
+  )
+}
+```
+
+\hfill\break
+
+```{r}
+result <- find_outliers(house_prices)
+result
+```
+
+
+## Summary Functions: Handling Missing Values
+
+Most summary functions return NA if the data contains missing values. Use the `na.rm = TRUE` argument to exclude NAs.
+
+```{r}
+scores_with_na <- c(85, 92, NA, 95, 88, NA, 90)
+```
+
+\hfill\break
+
+```{r}
+mean(scores_with_na)
+```
+
+\hfill\break
+
+```{r}
+mean(scores_with_na, na.rm = TRUE)
+median(scores_with_na, na.rm = TRUE)
+sum(scores_with_na, na.rm = TRUE)
+```
+
+
+## Summary Functions: The summary() Function
+
+The `summary()` function provides a quick overview of data, adapting to the data type.
+
+```{r}
+summary(scores)
+```
+
+\hfill\break
+
+```{r}
+summary(mtcars[, 1:4])
+```
+
+
+## Summary Functions with dplyr
+
+Using `summarise()` with summary functions allows powerful grouped calculations.
+
+```{r}
+nba2009_2018 %>%
+  group_by(home.WL) %>%
+  summarise(
+    avg_points = mean(home.PTS, na.rm = TRUE),
+    median_points = median(home.PTS, na.rm = TRUE),
+    min_points = min(home.PTS, na.rm = TRUE),
+    max_points = max(home.PTS, na.rm = TRUE),
+    games = n()
+  )
+```
+
+
+## Summary Functions with dplyr: Multiple Groups
+
+```{r}
+nba2009_2018 %>%
+  filter(SEASON_ID %in% c(2015, 2016, 2017)) %>%
+  group_by(SEASON_ID, home.WL) %>%
+  summarise(
+    avg_home_pts = mean(home.PTS, na.rm = TRUE),
+    avg_away_pts = mean(away.PTS, na.rm = TRUE),
+    total_games = n(),
+    .groups = 'drop'
+  )
+```
+
+
+## Summary Functions: across() for Multiple Columns
+
+Use `across()` to apply the same summary function to multiple columns at once.
+
+```{r}
+mtcars %>%
+  summarise(across(c(mpg, hp, wt), 
+                   list(mean = mean, sd = sd, median = median)))
+```
+
+
+# Joining Data
+
+## Why Join Data?
+
+In real-world analysis, data often comes from multiple sources that need to be combined.
+
+\hfill\break
+
+**Common scenarios:**
+
+- Customer information in one table, transactions in another
+- Player statistics in one dataset, team information in another
+- Survey responses linked by respondent ID
+
+\hfill\break
+
+**dplyr provides several join functions:**
+
+- `left_join()` - keep all rows from the left table
+- `right_join()` - keep all rows from the right table
+- `inner_join()` - keep only matching rows
+- `full_join()` - keep all rows from both tables
+
+
+## Joining Data: Example Setup
+
+Let's create two sample datasets to demonstrate joins.
+
+```{r}
+teams <- data.frame(
+  team_id = c(1, 2, 3, 4),
+  team_name = c("Lakers", "Celtics", "Bulls", "Heat"),
+  city = c("Los Angeles", "Boston", "Chicago", "Miami")
+)
+teams
+```
+
+\hfill\break
+
+```{r}
+players <- data.frame(
+  player_name = c("LeBron", "Tatum", "LaVine", "Butler", "Curry"),
+  team_id = c(1, 2, 3, 4, 5),
+  points_avg = c(27.2, 26.9, 24.8, 22.9, 29.4)
+)
+players
+```
+
+
+## Joining Data: left_join()
+
+`left_join()` keeps ALL rows from the left table, matching where possible.
+
+```{r}
+players %>%
+  left_join(teams, by = "team_id")
+```
+
+\hfill\break
+
+- Curry has `NA` for team_name and city because team_id 5 doesn't exist in the teams table
+- Use left_join when you want to keep all records from your primary dataset
+
+
+## Joining Data: right_join()
+  
+`right_join()` keeps ALL rows from the right table, matching where possible.
+
+```{r}
+players %>%
+  right_join(teams, by = "team_id")
+```
+
+\hfill\break
+
+- All teams are kept, even if no players match
+- This is equivalent to `teams %>% left_join(players, by = "team_id")`
+
+
+## Joining Data: inner_join()
+
+`inner_join()` keeps ONLY rows that match in BOTH tables.
+
+```{r}
+players %>%
+  inner_join(teams, by = "team_id")
+```
+
+\hfill\break
+
+- Curry is excluded because team_id 5 doesn't exist in teams
+- Use inner_join when you only want complete matches
+
+
+## Joining Data: full_join()
+
+`full_join()` keeps ALL rows from BOTH tables, matching where possible.
+
+```{r}
+teams2 <- rbind(teams, data.frame(team_id = 6, team_name = "Knicks", city = "New York"))
+
+players %>%
+  full_join(teams2, by = "team_id")
+```
+
+\hfill\break
+
+- Keeps all players AND all teams
+- NAs appear where no match exists
+
+
+## Joining Data: Multiple Key Columns
+
+You can join on multiple columns when needed.
+
+```{r}
+sales <- data.frame(
+  region = c("East", "East", "West", "West"),
+  year = c(2023, 2024, 2023, 2024),
+  revenue = c(100, 120, 150, 180)
+)
+
+targets <- data.frame(
+  region = c("East", "East", "West"),
+  year = c(2023, 2024, 2023),
+  target = c(95, 115, 140)
+)
+
+sales %>%
+  left_join(targets, by = c("region", "year"))
+```
+
+
+## Joining Data: Different Column Names
+
+Use `by = c("left_name" = "right_name")` when column names differ.
+
+```{r}
+team_stats <- data.frame(
+  t_id = c(1, 2, 3),
+  wins = c(52, 57, 40)
+)
+
+teams %>%
+  left_join(team_stats, by = c("team_id" = "t_id"))
+```
+
+
+## Joining Data: Practical Example
+
+```{r}
+player_totals <- players %>%
+  group_by(team_id) %>%
+  summarise(
+    num_players = n(),
+    team_avg_points = mean(points_avg)
+  )
+
+teams %>%
+  left_join(player_totals, by = "team_id")
+```
+
+
+# In Class Assignment
+
+## In Class Assignment: Olympic Medal Analysis
+
+Using the `summer` Olympic dataset and concepts learned in this lecture, complete the following tasks. Time estimate: 15-20 minutes.
+
+\hfill\break
+
+**Dataset:** summer.csv (already loaded as `summer`)
+
+\hfill\break
+
+**Tasks:**
+
+1. Create a summary showing the **total number of medals** and **number of unique sports** for each country. Filter to show only the top 5 countries by total medals.
+
+2. Calculate the **mean** and **median** number of medals per year for the USA. Are they similar? What does this tell you about the distribution?
+
+3. Create two data frames: one with country populations and one with medal counts. Then **join** them to calculate medals per million population.
+
+
+
+## In Class Assignment: Task Details
+
+**Task 1:** Summary by country
+
+- Group by Country
+- Use `summarise()` with `n()` for total medals
+- Use `n_distinct(Sport)` for unique sports count
+- Arrange in descending order and show top 5
+
+\hfill\break
+
+**Task 2:** Mean vs Median analysis
+
+- Filter for USA only
+- Group by Year and count medals per year
+- Calculate mean and median of these yearly counts
+- Compare and interpret the difference
+
+\hfill\break
+
+**Task 3:** Joining data
+
+- Create a simple population data frame for 3-4 countries
+- Join with medal counts
+- Calculate medals per capita
+
+
+## In Class Assignment: Task Details (continued)
+
+\hfill\break
+
+**Hints:**
+
+- Remember to use `%>%` to chain operations
+- For Task 2, first create a yearly summary, then summarize that
+- For Task 4, you'll need to summarize before pivoting
+
+
+```{r, include=FALSE}
+task1_solution <- summer %>%
+  group_by(Country) %>%
+  summarise(
+    total_medals = n(),
+    unique_sports = n_distinct(Sport)
+  ) %>%
+  arrange(desc(total_medals)) %>%
+  head(5)
+
+usa_yearly <- summer %>%
+  filter(Country == "USA") %>%
+  group_by(Year) %>%
+  summarise(medals = n())
+
+task2_mean <- mean(usa_yearly$medals)
+task2_median <- median(usa_yearly$medals)
+population <- data.frame(
+  Country = c("USA", "GBR", "GER", "FRA"),
+  pop_millions = c(331, 67, 83, 67)
+)
+medal_counts <- summer %>%
+  filter(Country %in% c("USA", "GBR", "GER", "FRA")) %>%
+  group_by(Country) %>%
+  summarise(total_medals = n())
+task3_solution <- medal_counts %>%
+  left_join(population, by = "Country") %>%
+  mutate(medals_per_million = total_medals / pop_millions)
+```
+
 
 # R Markdown
 
@@ -1993,102 +3278,5 @@ include_graphics('Img/new-page_pdf.png')
 ```
 
 
-
-# Data Transformation: dplyr
-
-## Grammar of data manipulation
-
-dplyr is a grammar of data manipulation, providing a consistent set of verbs that help you solve the most common data manipulation challenges:
-
-- **mutate()** adds new variables that are functions of existing variables
-- **select()** picks variables based on their names.
-- **filter()** picks cases based on their values.
-- **summarise()** reduces multiple values down to a single summary.
-- **arrange()** changes the ordering of the rows.
-
-\hfill\break
-
-These all combine naturally with group_by() which allows you to perform any operation "by group".
-
-
-## Grammar of data manipulation
-
-- Not necessary, but dplyr works the best with pipe like operator from **magrittr** package
-- \%\>\% operator takes the object from its left-hand side and use it as an argument in the function on the right-hand side 
-
-\hfill\break
-
-```{r, echo = F, out.width = "40%", fig.align='right'}
-include_graphics('Img/magrittr.jpg')
-```
-
-
-## Grammar of data manipulation
-
-- The "pipe" operation is a handy tool to make your code more legible: %>%. 
-\hfill\break
-
-Key points:
-
-- It takes the output of your previous operation and uses it as an input to your next operation.
-- You can determine where the previous argument goes with the period symbol, . , which acts as a placeholder.
-- Understand how to use it by replacing the pipe operation with "then" (in your mind, not in the code). For example, **filter(data, ...) \%\>\% select(...)** filters first then selects columns from the output of filter.
-
-
-## Grammar of data manipulation
-
-Filtering USA games only
-
-```{r}
-summer <- read.csv("Data/summer.csv", stringsAsFactors = F)
-```
-
-```{r}
-summer_usa <- summer %>% filter(Country=="USA")
-```
-
-```{r}
-table(summer_usa$Country, summer_usa$Medal)
-```
-
-
-## Grammar of data manipulation
-
-Filter and group_by
-
-```{r}
-summer %>%
-  filter(Country %in% c("USA", "FRA", "GBR")) %>%
-  group_by(Country) %>%
-  summarise(Count=n())
-```
-
-\hfill\break
-
-- The result is a tibble
-- Count=n() creates a new variable named Count with frequencies, n() calculates frequencies
-
-
-## Grammar of data manipulation
-
-Number of medals by country
-
-```{r}
-summer %>%
-  filter(Country %in% c("USA", "FRA", "GBR")) %>%
-  group_by(Country, Medal) %>%
-  summarise(Count=n())
-```
-
-
-## Grammer of data manipulation
-
-In class assignment 
-
-
-* Load the built in mtcars dataset
-* Create a new variable called liters_per_100km, which is equal to 235.214 divided by mpg
-* Group by the cars based on the number of cylinders and summarise the average liters_per_100km for each group
-* Filter the cars which consume more than 12 liters per 100 km and arrange them in descending order based on liters_per_100km
 
 

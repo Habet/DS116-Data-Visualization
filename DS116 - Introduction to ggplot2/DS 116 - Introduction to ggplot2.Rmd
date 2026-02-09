@@ -103,6 +103,81 @@ ggplot2
 - Without the grammar, there is no underlying theory and existing graphics packages are just a big collection of special cases. 
 
 
+## What's New in ggplot2 4.0.0
+
+ggplot2 4.0.0 was released in September 2025, marking the 18th anniversary of the package.
+
+\hfill\break
+
+**Core Changes:**
+
+- Migrated from S3 to S7 object-oriented system for better type enforcement
+- Stricter input validation - invalid arguments are now rejected immediately
+- Improved error messages for debugging
+
+\hfill\break
+
+Throughout this lecture, we'll highlight specific updates where relevant topics are introduced.
+
+\hfill\break
+
+*Full changelog: [tidyverse.org/blog/2025/09/ggplot2-4-0-0](https://tidyverse.org/blog/2025/09/ggplot2-4-0-0/)*
+
+
+## Important Syntax Change: after_stat()
+
+Starting with ggplot2 3.4.0, the "dot-dot" notation (`..variable..`) is **deprecated**.
+
+\hfill\break
+
+| Old (Deprecated) | New (Recommended) |
+|------------------|-------------------|
+| `aes(y = ..count..)` | `aes(y = after_stat(count))` |
+| `aes(y = ..density..)` | `aes(y = after_stat(density))` |
+| `aes(y = ..prop..)` | `aes(y = after_stat(prop))` |
+| `aes(fill = ..level..)` | `aes(fill = after_stat(level))` |
+
+\hfill\break
+
+**Why the change?**
+
+- **Clarity:** `after_stat()` explicitly shows the variable is computed by the stat layer
+- **Consistency:** Aligns with `after_scale()` and `stage()` functions
+- **Avoids conflicts:** Prevents confusion with column names containing dots
+
+
+## Other Deprecated Syntax
+
+**size vs linewidth (ggplot2 3.4.0+)**
+
+For line-based geoms, `size` is deprecated for controlling line width. Use `linewidth` instead.
+
+\scriptsize
+```{r, eval=FALSE}
+# Old (deprecated)
+geom_line(size = 1)
+
+# New (recommended)
+geom_line(linewidth = 1)
+```
+
+\normalsize
+\hfill\break
+
+**qplot() is deprecated**
+
+The quick-plot function `qplot()` is deprecated. Use the standard `ggplot()` syntax instead.
+
+\scriptsize
+```{r, eval=FALSE}
+# Old (deprecated)
+qplot(mpg, hp, data = mtcars)
+
+# New (recommended)
+ggplot(mtcars, aes(mpg, hp)) + geom_point()
+```
+
+
 ## Grammar of graphics
 
 Layered grammar of graphics
@@ -433,6 +508,31 @@ ggplot has a wide range of geometric object
  - geom_boxplot(): for boxplots etc
 
 
+## NEW in 4.0.0: geom_boxplot() Styling
+
+In ggplot2 4.0.0, you can now style individual parts of boxplots: median line, box, whiskers, and staples.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mpg, aes(class, hwy, colour = class)) +
+  geom_boxplot(whisker.linetype = "dashed", box.colour = "black",
+               median.linewidth = 2, staplewidth = 0.5, staple.colour = "grey50") +
+  guides(colour = "none")
+```
+
+
+## NEW in 4.0.0: geom_violin() Quantiles
+
+`geom_violin()` now computes quantiles on input data (not density). Style with `quantile.*` arguments.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mpg, aes(class, hwy, fill = class)) +
+  geom_violin(quantiles = c(0.25, 0.5, 0.75), quantile.linetype = 1, 
+              quantile.colour = "black") + guides(fill = "none")
+```
+
+
 ## ggplot2
 
 Different geometric objects ask for different aesthetics: geom_point() understands the following aesthetics
@@ -495,6 +595,18 @@ control positions of the labels (horizontal)
 ggplot(mtcars, aes(x = mpg, y = hp, label = car )) +
   geom_text(check_overlap = T, hjust = 0)
 ```
+
+
+## NEW in 4.0.0: geom_label() Styling
+
+`geom_label()` now has new styling options including `linetype`, `linewidth` aesthetics, and `border.colour`, `text.colour` arguments.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mtcars[1:10,], aes(mpg, hp, label = car, colour = factor(cyl))) +
+  geom_label(linewidth = 0.8, text.colour = "black")
+```
+
 
 ## ggplot2: statistical transformations
 Statistical transformations, stats for short, summarise data in many useful ways. 
@@ -593,6 +705,32 @@ ggplot(data.frame(x = c(-5, 5)), aes(x)) +
   stat_function(fun = dnorm, color = 'blue')
 ```
 
+
+## NEW in 4.0.0: stat_manual()
+
+`stat_manual()` allows custom computations without defining formal Stat classes. Provide any function that takes and returns a data frame.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+compute_centroid <- function(df) { data.frame(x = mean(df$x), y = mean(df$y)) }
+ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
+  geom_point(alpha = 0.5) +
+  stat_manual(fun = compute_centroid, geom = "point", size = 5, shape = 18)
+```
+
+
+## NEW in 4.0.0: stat_connect()
+
+`stat_connect()` creates stairstep connections between points - useful for survival curves, step functions, and bump charts.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+yearly_data <- data.frame(year = 2018:2024, value = c(100, 120, 115, 140, 155, 150, 175))
+ggplot(yearly_data, aes(year, value)) + geom_point(size = 3) +
+  stat_connect(color = "steelblue")
+```
+
+
 ## ggplot2: scales
 
 A scale controls the mapping from data to aesthetic attributes, and we need a scale for every aesthetic used on a plot. Each scale operates across all the data in the plot, ensuring a consistent mapping from data to aesthetics. *(Hadley Wickham)*
@@ -649,6 +787,31 @@ ggplot(data = mpg, mapping = aes(x = hwy, y = cty, color = drv)) +
 ```
 
 
+## NEW in 4.0.0: Discrete Scale Improvements
+
+Discrete scales now support `palette` argument, `continuous.limits`, minor breaks, and secondary axes.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(ToothGrowth, aes(interaction(dose, supp, sep = "\n"), len)) +
+  geom_boxplot() +
+  scale_x_discrete(palette = scales::pal_manual(c(1, 2, 3, 5, 6, 7)))
+```
+
+
+## NEW in 4.0.0: Discrete Scale - Secondary Axes
+
+Discrete scales can now have secondary axes using `dup_axis()` - useful for showing summary statistics.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+class_counts <- table(mpg$class)
+ggplot(mpg, aes(class, cty)) + geom_boxplot() +
+  scale_x_discrete(sec.axis = dup_axis(name = "Count", labels = paste0("n=", class_counts))
+  )
+```
+
+
 ## ggplot2: coordinate system
 
 Coordinate systems tie together the two position scales to produce a 2d location. Currently, ggplot2 comes with six different coordinate systems. All these coordinate systems are two dimensional.
@@ -695,6 +858,29 @@ ggplot(data = diamonds, aes(log10(price), log10(carat))) +
   geom_point() 
 ```
 
+
+## NEW in 4.0.0: Coordinate Reversal
+
+All coordinate systems now have a `reverse` argument: `"none"`, `"x"`, `"y"`, or `"xy"`.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point() +
+  coord_cartesian(reverse = "y") + labs(title = "Y-axis reversed")
+```
+
+
+## NEW in 4.0.0: Coordinate Reversal (Example)
+
+Useful for maps (e.g., displaying Australia in "native" orientation) or ranking charts.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mtcars, aes(wt, mpg)) + geom_point(aes(color = factor(cyl))) +
+  coord_cartesian(reverse = "xy") + labs(title = "Both axes reversed")
+```
+
+
 ## ggplot2: faceting
 
 - Faceting creates tables of graphics by splitting the data into subsets and displaying the same graph for each subset in an arrangement that facilitates comparison.
@@ -713,7 +899,7 @@ include_graphics('Img/ggplot 2.png')
 ## ggplot2: faceting
 Get the histogram of imdbRating by genre_first
 
-\scriptsize
+\tiny
 ```{r, out.height='68%'}
 movies_small <- read.csv('Data/movies_small.csv')
 ggplot(movies_small, aes(x = imdbRating)) + geom_histogram() + 
@@ -753,6 +939,45 @@ ggplot(movies_small, aes(x = imdbRating, y = Metascore)) + geom_point() +
 ggplot(movies_small, aes(x = imdbRating, y = Metascore)) + geom_point() + 
   facet_grid(Rated~genre_first+has_oscar)
 ```
+
+
+## NEW in 4.0.0: facet_wrap() Direction Options
+
+`facet_wrap(dir)` now supports 8 direction options using two-letter codes indicating start position and fill direction.
+
+\tiny
+```{r, out.height='40%', fig.width=10, fig.height=2.5}
+library(gridExtra)
+p1 <- ggplot(mpg, aes(displ, hwy)) + geom_point(size = 0.8) +
+  facet_wrap(~ drv, dir = "lt") + labs(title = "dir = 'lt'")
+p2 <- ggplot(mpg, aes(displ, hwy)) + geom_point(size = 0.8) +
+  facet_wrap(~ drv, dir = "br") + labs(title = "dir = 'br'")
+grid.arrange(p1, p2, ncol = 2)
+```
+
+
+## NEW in 4.0.0: facet_wrap() Space Argument
+
+`facet_wrap(space)` now allows proportional panel sizes based on data range (previously only in `facet_grid`).
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mpg, aes(displ, hwy)) + geom_point() +
+  facet_wrap(~ drv, scales = "free_x", space = "free_x")
+```
+
+
+## NEW in 4.0.0: Layer Layout Control
+
+New `layer(layout)` argument controls how data is distributed across facets: `NULL` (default), `"fixed"` (repeat everywhere), or panel index.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(colour = "grey80", layout = "fixed") +  # All data in every panel
+  geom_point(aes(colour = drv)) + facet_wrap(~ drv)  # Only facet data
+```
+
 
 ## ggplot2: guides and themes
 
@@ -931,6 +1156,90 @@ theme_my <- function(base_size = 12)
 ggplot(mtcars, aes(x = mpg, y = hp)) + geom_point() + 
   theme_my(base_size = 16)
 ```
+
+
+## NEW in 4.0.0: Theme Ink and Paper
+
+Themes now have `ink` (foreground) and `paper` (background) settings that propagate to layer defaults.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mpg, aes(displ, hwy)) + geom_point() + geom_smooth(method = "lm", formula = y ~ x) +
+  theme_gray(paper = "cornsilk", ink = "navy", accent = "tomato")
+```
+
+
+## NEW in 4.0.0: Theme Shortcuts
+
+New helper functions reduce verbosity: `theme_sub_axis()`, `theme_sub_legend()`, `theme_sub_panel()`, `theme_sub_plot()`.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mtcars, aes(mpg, hp)) + geom_point() +
+  theme_sub_axis_x(ticks = element_line(colour = "red"), ticks.length = unit(5, "mm")) +
+  theme_sub_panel(background = element_rect(fill = "lightyellow"))
+```
+
+
+## NEW in 4.0.0: Panel Size Control
+
+New `panel.widths` and `panel.heights` theme arguments for precise panel sizing.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mpg, aes(displ, hwy)) + geom_point() + facet_wrap(~ drv) +
+  theme_sub_panel(widths = unit(4, "cm"), heights = unit(3, "cm"))
+```
+
+
+## NEW in 4.0.0: Label Improvements
+
+Labels can now come from vector 'label' attributes or data dictionaries via `labs(dictionary)`.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+label_dict <- c(mpg = "Miles per Gallon", hp = "Horsepower", cyl = "Number of Cylinders")
+ggplot(mtcars, aes(mpg, hp, color = factor(cyl))) + geom_point() +
+  labs(dictionary = label_dict)
+```
+
+
+## NEW in 4.0.0: Functions in Labels
+
+You can now use functions in `labs()`, scale names, and guide titles for dynamic labeling.
+
+\tiny
+```{r, out.height='45%', fig.height=3}
+ggplot(mtcars, aes(mpg, hp, color = factor(cyl))) + geom_point() +
+  scale_colour_discrete(name = toupper) +
+  labs(x = tools::toTitleCase, y = \(x) paste0(x, " (units)"))
+```
+
+
+## NEW in 4.0.0: Position Aesthetics - nudge
+
+Position adjustments can now have their own aesthetics. `position_nudge()` has `nudge_x` and `nudge_y` as mappable aesthetics.
+
+\tiny
+```{r, out.height='40%', fig.height=2.5}
+coal_data <- data.frame(region = c("Asia", "Europe", "N. America"),
+                        change = c(18.6, -20.0, -35.1))
+ggplot(coal_data, aes(change, region)) + geom_col() +
+  geom_text(aes(label = change, nudge_x = sign(change) * 3))
+```
+
+
+## NEW in 4.0.0: Position Aesthetics - dodge order
+
+`position_dodge()` has a new `order` aesthetic for consistent group placement even with missing data.
+
+\tiny
+```{r, out.height='40%', fig.height=2.5}
+df <- data.frame(x = c("A", "A", "B"), group = c("G1", "G2", "G1"), y = c(10, 15, 12))
+ggplot(df, aes(x, y, fill = group, order = group)) +
+  geom_col(position = position_dodge(preserve = "single"))
+```
+
 
 ## ggplot2: arrange in grid
 

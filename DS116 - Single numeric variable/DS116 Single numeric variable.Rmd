@@ -246,17 +246,22 @@ ggplot() + geom_density(aes(x))
 Scale the y axis
 
 ```{r, out.width='60%'}
-ggplot() + geom_density(aes(x, y = ..scaled..))
+ggplot() + geom_density(aes(x, y = after_stat(scaled)))
 ```
 
+\tiny
+*Note: We use `after_stat(scaled)` instead of the deprecated `..scaled..` syntax (changed in ggplot2 3.4.0+).*
 
 ## Density plot over the histogram
 
 \scriptsize
 ```{r}
-ggplot(mapping = aes(x = x))  + geom_histogram(aes(y = ..density..)) +
+ggplot(mapping = aes(x = x))  + geom_histogram(aes(y = after_stat(density))) +
   geom_density(color = 'red')
 ```
+
+\tiny
+*Note: `after_stat(density)` replaces the deprecated `..density..` notation. This makes it explicit that `density` is computed by the stat layer.*
 
 ## Cumulative distribution function
 

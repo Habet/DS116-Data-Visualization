@@ -207,9 +207,12 @@ With pie charts it is also useful to add count values (relative or absolute) to 
 \scriptsize
 ```{r, out.height='60%'}
 ggplot(data = summer_usa, aes(x = "", fill = Medal)) + geom_bar() + 
-    geom_text(stat = 'count', aes(label = ..count..), 
+    geom_text(stat = 'count', aes(label = after_stat(count)), 
               position = position_stack(vjust = 0.5))
 ```
+
+\tiny
+*Note: We use `after_stat(count)` instead of the deprecated `..count..` syntax. The `after_stat()` function explicitly indicates that this variable is computed by the stat layer, not from your data.*
 
 ## Univariate categorical variable
 
@@ -218,7 +221,7 @@ To pie chart
 \scriptsize
 ```{r, out.height='65%'}
 ggplot(data = summer_usa, aes(x = "", fill = Medal)) + geom_bar() + 
-    geom_text(stat = 'count', aes(label = ..count..), 
+    geom_text(stat = 'count', aes(label = after_stat(count)), 
               position = position_stack(vjust=0.5)) + 
   coord_polar(theta='y') + theme_void()
 ```

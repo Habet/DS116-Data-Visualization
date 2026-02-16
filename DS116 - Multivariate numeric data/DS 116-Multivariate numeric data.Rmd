@@ -842,8 +842,11 @@ You can also color lines by levels
 
 ```{r, out.height='65%'}
 ggplot(grid_df, aes(x = x, y = y, z = z)) + 
-  geom_contour(aes(color = ..level..), binwidth = 2.5) 
+  geom_contour(aes(color = after_stat(level)), binwidth = 2.5) 
 ```
+
+\tiny
+*Note: `after_stat(level)` replaces the deprecated `..level..` syntax (ggplot2 3.4.0+).*
 
 
 
@@ -946,8 +949,11 @@ Stat = density
 
 ```{r, out.height='68%'}
 ggplot(movies, aes(x = Metascore, y = imdbRating)) + 
-  stat_bin_2d(aes(fill = ..density..)) 
+  stat_bin_2d(aes(fill = after_stat(density))) 
 ```
+
+\tiny
+*Note: `after_stat(density)` replaces the deprecated `..density..` syntax.*
 
 
 ## 2d plots

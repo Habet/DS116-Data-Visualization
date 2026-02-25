@@ -1,0 +1,688 @@
+---
+title: "DS116 Data Visualization - Practical Session 1"
+subtitle: "Analyzing Gold Price Trends: A Time Series Case Study"
+author: "American University of Armenia"
+date: ""
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    latex_engine: xelatex
+    fig_width: 7
+    fig_height: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = 'center', out.width = '85%')
+```
+
+\newpage
+
+# Introduction
+
+In this practical session, you will analyze **10 years of gold price data** (2016-2026) to practice the skills learned from:
+
+- **Introduction to R**: Data loading, exploration, cleaning, and manipulation
+- **Introduction to ggplot2**: Creating informative visualizations
+- **Single Numeric Variables**: Understanding distributions of financial data
+
+## Learning Objectives
+
+By the end of this session, you will be able to:
+
+1. Load and explore real-world financial data
+2. Handle missing values in time series data
+3. Calculate and interpret financial metrics (returns, volatility)
+4. Create visualizations for price distributions and trends
+5. Compare distributions across time periods
+6. Identify patterns and outliers in financial data
+
+## About the Dataset
+
+The dataset contains **daily gold price records** from 2016 to 2026, including:
+
+| Column | Description |
+|--------|-------------|
+| Date | Trading date |
+| Open, High, Low, Close | Daily price range |
+| Adj Close | Adjusted closing price |
+| Volume | Trading volume |
+| Daily_Return | Daily percentage change |
+| MA_20, MA_50, MA_200 | Moving averages |
+| Volatility_20 | 20-day rolling volatility |
+| Year, Month, Day_of_Week, Quarter | Time features |
+
+---
+
+# Step 1: Setup and Data Loading
+
+## 1.1 Load Required Libraries
+
+```{r load-libraries}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(scales)  # For formatting axes
+```
+
+## 1.2 Load the Gold Prices Data
+
+```{r load-data}
+# Load the dataset
+gold <- read.csv("gold_prices_10y.csv")
+
+# Check the first few rows
+head(gold)
+```
+
+## 1.3 Basic Data Exploration
+
+```{r explore-structure}
+# Structure of the data
+str(gold)
+```
+
+```{r explore-dimensions}
+# Dimensions
+cat("Dataset contains", nrow(gold), "rows and", ncol(gold), "columns\n")
+cat("Date range:", min(gold$Date), "to", max(gold$Date))
+```
+
+```{r explore-summary}
+# Summary statistics for numeric columns
+summary(gold[, c("Close", "Volume", "Daily_Return", "Volatility_20")])
+```
+
+### Your Turn: Initial Questions
+
+**Q1:** How many trading days are in the dataset?
+
+**Q2:** What is the range of closing prices over the 10-year period?
+
+**Q3:** Which columns have missing values?
+
+```{r check-missing}
+# Count missing values per column
+colSums(is.na(gold))
+```
+
+---
+
+# Step 2: Data Cleaning and Preparation
+
+## 2.1 Convert Date Column
+
+```{r convert-date}
+# Convert Date to proper date format
+gold$Date <- as.Date(gold$Date)
+
+# Verify the conversion
+class(gold$Date)
+range(gold$Date)
+```
+
+## 2.2 Handle Missing Values
+
+```{r analyze-missing}
+# Which rows have missing Daily_Return?
+missing_returns <- gold %>% filter(is.na(Daily_Return))
+cat("Rows with missing Daily_Return:", nrow(missing_returns), "\n")
+head(missing_returns[, c("Date", "Close", "Daily_Return")])
+```
+
+**Note:** The first row typically has no return because there's no previous day to compare.
+
+```{r handle-missing}
+# For analysis, we'll work with complete cases for return-related analysis
+gold_complete <- gold %>% filter(!is.na(Daily_Return))
+cat("Complete observations:", nrow(gold_complete))
+```
+
+## 2.3 Create Additional Variables
+
+```{r create-variables}
+# Add price change category
+gold_complete <- gold_complete %>%
+  mutate(
+    Return_Category = case_when(
+      Daily_Return < -2 ~ "Large Drop",
+      Daily_Return < 0 ~ "Small Drop",
+      Daily_Return < 2 ~ "Small Gain",
+      TRUE ~ "Large Gain"
+    ),
+    Return_Category = factor(Return_Category, 
+                             levels = c("Large Drop", "Small Drop", "Small Gain", "Large Gain")),
+    # Price level categories
+    Price_Level = case_when(
+      Close < 120 ~ "Low (<$120)",
+      Close < 180 ~ "Medium ($120-180)",
+      TRUE ~ "High (>$180)"
+    ),
+    Price_Level = factor(Price_Level, levels = c("Low (<$120)", "Medium ($120-180)", "High (>$180)"))
+  )
+
+# Check the distribution
+table(gold_complete$Return_Category)
+table(gold_complete$Price_Level)
+```
+
+---
+
+# Step 3: Summary Statistics for Gold Prices
+
+## 3.1 Central Tendency of Closing Prices
+
+```{r price-central-tendency}
+# Mean closing price
+mean_price <- mean(gold_complete$Close)
+cat("Mean Closing Price: $", round(mean_price, 2), "\n")
+
+# Median closing price
+median_price <- median(gold_complete$Close)
+cat("Median Closing Price: $", round(median_price, 2), "\n")
+
+# Difference
+cat("Mean - Median: $", round(mean_price - median_price, 2))
+```
+
+**Interpretation:** A positive difference (mean > median) suggests the price distribution is right-skewed, with some periods of exceptionally high prices.
+
+## 3.2 Spread of Daily Returns
+
+```{r returns-spread}
+# Standard deviation of returns
+sd_return <- sd(gold_complete$Daily_Return)
+cat("Std Dev of Daily Returns:", round(sd_return, 4), "%\n")
+
+# Range
+return_range <- range(gold_complete$Daily_Return)
+cat("Return Range:", round(return_range[1], 2), "% to", round(return_range[2], 2), "%\n")
+
+# IQR
+iqr_return <- IQR(gold_complete$Daily_Return)
+cat("IQR of Returns:", round(iqr_return, 4), "%")
+```
+
+## 3.3 Quantiles of Returns
+
+```{r returns-quantiles}
+# Key percentiles for risk analysis
+quantile(gold_complete$Daily_Return, 
+         probs = c(0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99))
+```
+
+**Interpretation:** 
+- The 1st percentile shows the worst 1% of daily returns (Value at Risk)
+- The 99th percentile shows the best 1% of daily returns
+
+## 3.4 Summary by Year
+
+```{r yearly-summary}
+yearly_stats <- gold_complete %>%
+  group_by(Year) %>%
+  summarise(
+    Trading_Days = n(),
+    Mean_Price = mean(Close),
+    Median_Price = median(Close),
+    Min_Price = min(Close),
+    Max_Price = max(Close),
+    Avg_Return = mean(Daily_Return),
+    Volatility = sd(Daily_Return)
+  ) %>%
+  arrange(Year)
+
+yearly_stats
+```
+
+---
+
+# Step 4: Visualizing Single Numeric Variables
+
+## 4.1 Histogram of Closing Prices
+
+### Basic Histogram
+
+```{r hist-basic}
+ggplot(gold_complete, aes(x = Close)) +
+  geom_histogram(bins = 30, fill = "gold3", color = "white") +
+  labs(
+    title = "Distribution of Gold Closing Prices (2016-2026)",
+    x = "Closing Price ($)",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+```
+
+### Histogram with Density Curve
+
+```{r hist-density}
+ggplot(gold_complete, aes(x = Close)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 30, 
+                 fill = "gold3", color = "white", alpha = 0.7) +
+  geom_density(color = "darkred", linewidth = 1) +
+  labs(
+    title = "Gold Price Distribution with Density Curve",
+    x = "Closing Price ($)",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+## 4.2 Distribution of Daily Returns
+
+### Histogram of Returns
+
+```{r returns-hist}
+ggplot(gold_complete, aes(x = Daily_Return)) +
+  geom_histogram(bins = 50, fill = "steelblue", color = "white") +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
+  labs(
+    title = "Distribution of Daily Returns",
+    subtitle = "Red line indicates zero return",
+    x = "Daily Return (%)",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+```
+
+### Returns with Normal Overlay
+
+```{r returns-normal}
+# Calculate mean and sd for normal curve
+mean_ret <- mean(gold_complete$Daily_Return)
+sd_ret <- sd(gold_complete$Daily_Return)
+
+ggplot(gold_complete, aes(x = Daily_Return)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 50, 
+                 fill = "steelblue", color = "white", alpha = 0.7) +
+  stat_function(fun = dnorm, args = list(mean = mean_ret, sd = sd_ret),
+                color = "red", linewidth = 1, linetype = "dashed") +
+  labs(
+    title = "Daily Returns vs Normal Distribution",
+    subtitle = "Red dashed line shows theoretical normal distribution",
+    x = "Daily Return (%)",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+**Note:** Financial returns often have "fat tails" - more extreme values than a normal distribution would predict.
+
+## 4.3 Boxplots
+
+### Basic Boxplot of Prices
+
+```{r boxplot-basic}
+ggplot(gold_complete, aes(y = Close)) +
+  geom_boxplot(fill = "gold3", alpha = 0.7, width = 0.5) +
+  scale_y_continuous(labels = dollar_format()) +
+  labs(
+    title = "Gold Closing Price Distribution",
+    y = "Closing Price"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+### Boxplot of Returns
+
+```{r boxplot-returns}
+ggplot(gold_complete, aes(x = "", y = Daily_Return)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7, outlier.color = "red", outlier.alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "darkgray", linetype = "dashed") +
+  labs(
+    title = "Distribution of Daily Returns",
+    subtitle = "Red points indicate outliers",
+    x = "",
+    y = "Daily Return (%)"
+  ) +
+  theme_minimal()
+```
+
+## 4.4 Empirical CDF of Returns
+
+```{r ecdf-returns}
+ggplot(gold_complete, aes(x = Daily_Return)) +
+  stat_ecdf(geom = "step", color = "steelblue", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  scale_y_continuous(labels = percent_format()) +
+  labs(
+    title = "Cumulative Distribution of Daily Returns",
+    subtitle = "What percentage of days had returns below X%?",
+    x = "Daily Return (%)",
+    y = "Cumulative Probability"
+  ) +
+  theme_minimal()
+```
+
+**Reading the eCDF:** Find where the curve crosses 0% return - this tells you what percentage of days had negative returns.
+
+## 4.5 Q-Q Plot for Returns
+
+```{r qq-returns}
+ggplot(gold_complete, aes(sample = Daily_Return)) +
+  stat_qq(color = "steelblue", alpha = 0.5) +
+  stat_qq_line(color = "red", linewidth = 1) +
+  labs(
+    title = "Q-Q Plot: Daily Returns vs Normal Distribution",
+    subtitle = "Deviations at the tails indicate fat tails",
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+```
+
+**Interpretation:** The S-shape at the ends indicates "fat tails" - extreme returns occur more often than a normal distribution would predict. This is typical for financial data.
+
+---
+
+# Step 5: Comparing Distributions Across Groups
+
+## 5.1 Price Distribution by Year
+
+### Faceted Histograms
+
+```{r hist-by-year}
+ggplot(gold_complete, aes(x = Close, fill = factor(Year))) +
+  geom_histogram(bins = 20, color = "white", alpha = 0.8) +
+  facet_wrap(~ Year, scales = "free_y", ncol = 3) +
+  scale_fill_viridis_d() +
+  labs(
+    title = "Gold Price Distribution by Year",
+    x = "Closing Price ($)",
+    y = "Frequency"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### Boxplots by Year
+
+```{r boxplot-by-year}
+ggplot(gold_complete, aes(x = factor(Year), y = Close, fill = factor(Year))) +
+  geom_boxplot(alpha = 0.7) +
+  scale_y_continuous(labels = dollar_format()) +
+  scale_fill_viridis_d() +
+  labs(
+    title = "Gold Price Comparison Across Years",
+    x = "Year",
+    y = "Closing Price"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+## 5.2 Returns Distribution by Year
+
+### Violin Plots
+
+```{r violin-by-year}
+ggplot(gold_complete, aes(x = factor(Year), y = Daily_Return, fill = factor(Year))) +
+  geom_violin(alpha = 0.7) +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.8) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  scale_fill_viridis_d() +
+  labs(
+    title = "Daily Return Distribution by Year",
+    subtitle = "Violin plots show distribution shape; embedded boxplots show quartiles",
+    x = "Year",
+    y = "Daily Return (%)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+## 5.3 Volatility Comparison
+
+```{r volatility-boxplot}
+# Filter for complete volatility data
+gold_vol <- gold_complete %>% filter(!is.na(Volatility_20))
+
+ggplot(gold_vol, aes(x = factor(Year), y = Volatility_20, fill = factor(Year))) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_viridis_d() +
+  labs(
+    title = "20-Day Volatility by Year",
+    subtitle = "Higher values indicate more price uncertainty",
+    x = "Year",
+    y = "20-Day Volatility"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+## 5.4 Returns by Day of Week
+
+```{r returns-by-dow}
+# Create day names
+dow_names <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+gold_complete$Day_Name <- factor(dow_names[gold_complete$Day_of_Week + 1],
+                                  levels = dow_names)
+
+ggplot(gold_complete, aes(x = Day_Name, y = Daily_Return, fill = Day_Name)) +
+  geom_boxplot(alpha = 0.7) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    title = "Daily Returns by Day of Week",
+    subtitle = "Is there a day-of-week effect in gold returns?",
+    x = "Day of Week",
+    y = "Daily Return (%)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+## 5.5 Returns by Quarter
+
+```{r returns-by-quarter}
+ggplot(gold_complete, aes(x = factor(Quarter), y = Daily_Return, fill = factor(Quarter))) +
+  geom_violin(alpha = 0.7) +
+  geom_boxplot(width = 0.15, fill = "white") +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "Daily Returns by Quarter",
+    x = "Quarter",
+    y = "Daily Return (%)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+---
+
+# Step 6: Identifying Outliers
+
+## 6.1 Extreme Returns
+
+```{r find-outliers}
+# Calculate bounds using IQR method
+Q1_ret <- quantile(gold_complete$Daily_Return, 0.25)
+Q3_ret <- quantile(gold_complete$Daily_Return, 0.75)
+IQR_ret <- Q3_ret - Q1_ret
+
+lower_bound <- Q1_ret - 1.5 * IQR_ret
+upper_bound <- Q3_ret + 1.5 * IQR_ret
+
+cat("Normal return range:", round(lower_bound, 2), "% to", round(upper_bound, 2), "%\n\n")
+
+# Find extreme days
+extreme_days <- gold_complete %>%
+  filter(Daily_Return < lower_bound | Daily_Return > upper_bound) %>%
+  select(Date, Close, Daily_Return, Volume) %>%
+  arrange(Daily_Return)
+
+cat("Number of extreme return days:", nrow(extreme_days), "\n")
+cat("That's", round(nrow(extreme_days)/nrow(gold_complete)*100, 1), "% of trading days\n")
+```
+
+## 6.2 Worst and Best Days
+
+```{r extreme-days}
+# Worst 10 days
+cat("=== 10 WORST TRADING DAYS ===\n")
+head(extreme_days, 10)
+
+# Best 10 days
+cat("\n=== 10 BEST TRADING DAYS ===\n")
+tail(extreme_days, 10)
+```
+
+## 6.3 Visualizing Extreme Returns
+
+```{r extreme-viz}
+gold_complete <- gold_complete %>%
+  mutate(Is_Extreme = Daily_Return < lower_bound | Daily_Return > upper_bound)
+
+ggplot(gold_complete, aes(x = Daily_Return, fill = Is_Extreme)) +
+  geom_histogram(bins = 50, color = "white") +
+  scale_fill_manual(values = c("steelblue", "red"), 
+                    labels = c("Normal", "Extreme")) +
+  labs(
+    title = "Distribution of Daily Returns with Outliers Highlighted",
+    x = "Daily Return (%)",
+    y = "Frequency",
+    fill = "Return Type"
+  ) +
+  theme_minimal()
+```
+
+---
+
+# Step 7: Summary Dashboard
+
+```{r dashboard, fig.width=12, fig.height=10}
+library(gridExtra)
+
+# Price histogram
+p1 <- ggplot(gold_complete, aes(x = Close)) +
+  geom_histogram(bins = 30, fill = "gold3", color = "white") +
+  labs(title = "Price Distribution", x = "Price ($)", y = "Count") +
+  theme_minimal()
+
+# Returns histogram
+p2 <- ggplot(gold_complete, aes(x = Daily_Return)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white") +
+  geom_vline(xintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Returns Distribution", x = "Return (%)", y = "Count") +
+  theme_minimal()
+
+# Price by year
+p3 <- ggplot(gold_complete, aes(x = factor(Year), y = Close, fill = factor(Year))) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_viridis_d() +
+  labs(title = "Price by Year", x = "Year", y = "Price ($)") +
+  theme_minimal() +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Q-Q plot
+p4 <- ggplot(gold_complete, aes(sample = Daily_Return)) +
+  stat_qq(color = "steelblue", alpha = 0.5) +
+  stat_qq_line(color = "red") +
+  labs(title = "Q-Q Plot (Returns)", x = "Theoretical", y = "Sample") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+## Summary Statistics Report
+
+```{r final-report}
+cat("=" , rep("=", 55), "\n", sep = "")
+cat("GOLD PRICE ANALYSIS SUMMARY (2016-2026)\n")
+cat("=", rep("=", 55), "\n\n", sep = "")
+
+cat("DATASET:\n")
+cat("  Trading Days:", nrow(gold_complete), "\n")
+cat("  Date Range:", as.character(min(gold_complete$Date)), "to", 
+    as.character(max(gold_complete$Date)), "\n\n")
+
+cat("PRICE STATISTICS:\n")
+cat("  Mean Price:   $", round(mean(gold_complete$Close), 2), "\n", sep = "")
+cat("  Median Price: $", round(median(gold_complete$Close), 2), "\n", sep = "")
+cat("  Min Price:    $", round(min(gold_complete$Close), 2), "\n", sep = "")
+cat("  Max Price:    $", round(max(gold_complete$Close), 2), "\n\n", sep = "")
+
+cat("RETURN STATISTICS:\n")
+cat("  Mean Return:  ", round(mean(gold_complete$Daily_Return), 4), "%\n", sep = "")
+cat("  Std Dev:      ", round(sd(gold_complete$Daily_Return), 4), "%\n", sep = "")
+cat("  Worst Day:    ", round(min(gold_complete$Daily_Return), 2), "%\n", sep = "")
+cat("  Best Day:     ", round(max(gold_complete$Daily_Return), 2), "%\n\n", sep = "")
+
+cat("RISK METRICS (Value at Risk):\n")
+cat("  1% VaR:       ", round(quantile(gold_complete$Daily_Return, 0.01), 2), "%\n", sep = "")
+cat("  5% VaR:       ", round(quantile(gold_complete$Daily_Return, 0.05), 2), "%\n", sep = "")
+
+cat("\nDISTRIBUTION:\n")
+pct_negative <- mean(gold_complete$Daily_Return < 0) * 100
+cat("  Days with negative returns: ", round(pct_negative, 1), "%\n", sep = "")
+cat("  Days with positive returns: ", round(100 - pct_negative, 1), "%\n", sep = "")
+cat("  Extreme days (outliers):    ", nrow(extreme_days), 
+    " (", round(nrow(extreme_days)/nrow(gold_complete)*100, 1), "%)\n", sep = "")
+```
+
+---
+
+# Practice Exercises
+
+## Exercise 1: Monthly Analysis
+
+Create a summary of gold prices by **Month** (1-12). Calculate the average return for each month to see if there's a seasonal pattern.
+
+```{r exercise1}
+# Your code here
+
+```
+
+## Exercise 2: High Volatility Periods
+
+Filter the data to find periods where `Volatility_20` is greater than its 90th percentile. Visualize the distribution of returns during these high-volatility periods compared to normal periods.
+
+```{r exercise2}
+# Your code here
+
+```
+
+## Exercise 3: Volume Analysis
+
+Create visualizations to explore the relationship between trading volume and:
+1. Absolute daily returns (hint: create `abs(Daily_Return)`)
+2. Whether volume is higher on up days vs down days
+
+```{r exercise3}
+# Your code here
+
+```
+
+---
+
+# Key Takeaways
+
+1. **Financial data has unique characteristics**:
+   - Returns are often approximately symmetric around zero
+   - "Fat tails" - extreme events occur more often than normal distribution predicts
+   - Volatility clusters - high volatility periods tend to persist
+
+2. **Distribution analysis for prices vs returns**:
+   - Prices: Often right-skewed, non-stationary (changes over time)
+   - Returns: More symmetric, better for statistical analysis
+
+3. **Risk metrics**:
+   - Standard deviation measures typical fluctuation
+   - Value at Risk (VaR) measures extreme downside risk
+   - IQR and outlier detection identify unusual trading days
+
+4. **Temporal patterns**:
+   - Compare distributions across years, quarters, days of week
+   - Look for seasonal effects or regime changes
+
+5. **Visualization choices**:
+   - Histograms: See the shape and frequency
+   - Boxplots: Compare groups and spot outliers
+   - Violin plots: See distribution shape across groups
+   - Q-Q plots: Check normality assumptions
+
+---
+
+*End of Practical Session 2*

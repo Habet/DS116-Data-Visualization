@@ -59,11 +59,58 @@ colorwheel <- function(hex){
 ```
 
 
+
+# Misuse of colors
+
+## Misuse of colors
+
+Source: Clause Wilke
+
+```{r, echo = F, out.height='65%'}
+include_graphics('Img/bad1.png')
+```
+
+
+## Misuse of colors
+
+Source: Clause Wilke
+
+```{r, echo = F, out.height='65%'}
+include_graphics('Img/bad2.png')
+```
+
+
+## Misuse of colors
+
+Source: Clause Wilke
+
+```{r, echo = F, out.height='65%'}
+include_graphics('Img/bad3.png')
+```
+
+
+
+
+
+## Misuse of colors
+
+Source: Clause Wilke
+
+\vspace{0.5cm}
+
+```{r, echo = F, out.height='65%'}
+include_graphics('Img/bad4.png')
+```
+
+
+
+# Color
+
 ## Color
 
 How do we see color ?
-\
 
+\vspace{0.5cm}
 
 ```{r, echo = F, out.height='85%'}
 include_graphics('Img/colors 1.png')
@@ -711,5 +758,29 @@ Four viridis perceptually uniform colormaps are available
 - **viridis**	perceptually uniform shades of blue-green-yellow
 
 
+# The problem with rainbow pallete
+
+## Rainbow palette
+
+```{r, echo = F, out.height='85%'}
+include_graphics('Img/color 14.jpg')
+```
 
 
+## Rainbow palette
+
+```{r, echo = F, out.height='85%'}
+include_graphics('Img/color 15.jpg')
+```
+
+
+## Rainbow palette
+
+```{r, echo = F, out.height='85%'}
+include_graphics('Img/color 15.jpg')
+```
+
+
+## Rainbow palettte
+
+Visualize the rainbow palette

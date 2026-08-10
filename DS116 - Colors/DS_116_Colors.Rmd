@@ -66,6 +66,8 @@ colorwheel <- function(hex){
 
 Source: Clause Wilke
 
+\vspace{0.5cm}
+
 ```{r, echo = F, out.height='65%'}
 include_graphics('Img/bad1.png')
 ```
@@ -75,6 +77,8 @@ include_graphics('Img/bad1.png')
 
 Source: Clause Wilke
 
+\vspace{0.5cm}
+
 ```{r, echo = F, out.height='65%'}
 include_graphics('Img/bad2.png')
 ```
@@ -83,6 +87,8 @@ include_graphics('Img/bad2.png')
 ## Misuse of colors
 
 Source: Clause Wilke
+
+\vspace{0.5cm}
 
 ```{r, echo = F, out.height='65%'}
 include_graphics('Img/bad3.png')

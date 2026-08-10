@@ -43,25 +43,17 @@ knitr::knit_hooks$set(chunk = function(x, options) {
 
 There are many sources of uncertainty
 
- - Uncertainty of point estimates
- - Uncertainty of distributions
- - Uncertainty of predictions (curve fit) etc..
+- Uncertainty of distributions
+- Uncertainty of point estimates
+- Uncertainty of predictions (curve fit) etc..
  
  
-# Uncertainty of point estimates
+# Uncertainty of distributions
  
-## Error bars
+
  
- Uncertainty of point estimates
- 
- 
- 
-```{r, echo = F}
-include_graphics('Img/CI.png')
-```
- 
- 
-## Error bars
+
+## Uncertainty of distributions
  
  Uncertainty with standard deviations
  
@@ -70,7 +62,7 @@ include_graphics('Img/SD.png')
 ```
  
 
-## Error bars
+## Uncertainty of distributions
 
 ```{r}
 movies_small <- read.csv('Data/movies_small.csv')
@@ -79,7 +71,7 @@ summarised <-  movies_small %>% summarise(mean = mean(imdbRating),
 summarised
 ```
 
-## Error bars
+## Uncertainty of distributions
 
 \scriptsize
 ```{r, out.height='60%'}
@@ -87,7 +79,7 @@ ggplot(summarised, mapping = aes(x = "", y = mean, ymax = mean+sd,
                                  ymin = mean-sd)) + geom_errorbar()
 ```
 
-## Error bars
+## Uncertainty of distributions
 
 \scriptsize
 ```{r, out.height='60%'}
@@ -95,7 +87,7 @@ ggplot(summarised, mapping = aes(x = mean, y = "",  xmax = mean+sd,
                                  xmin = mean-sd)) + geom_errorbarh()
 ```
 
-## Error bars
+## Uncertainty of distributions
 
 If you want to look at the error bars by groups - summarise by groups using dplyr
 
@@ -105,7 +97,7 @@ summarised <-  movies_small  %>% group_by(genre_first) %>%
 summarised
 ```
 
-## Error bars
+## Uncertainty of distributions
  
  - use the grouping variable as x aesthetics 
  
@@ -115,7 +107,7 @@ ggplot(summarised, aes(x = genre_first, y = mean, ymin=mean-sd,
                        ymax = mean+sd)) + geom_errorbar()
 ```
 
-## Error bars
+## Uncertainty of distributions
  
 There are few functions in R that can be used for generating the data for error bars
  
@@ -130,7 +122,81 @@ smean.sdl(movies_small$imdbRating, mult = 1)
 smean.sdl(movies_small$imdbRating, mult = 2)
 ```
 
-## Error bars
+
+## Uncertainty of distributions
+
+- ggplot2 has a wrapper for Hmisc functions: mean_cl_normal, mean_sdl, mean_se
+- To construct the error bars with the functions we will use stat_summary() layer
+
+stat_summary() applies defined function on y by the given values of x.
+No need to summarise with dplyr and create new dataframe
+
+
+## Uncertainty of distributions
+
+Error bars for imdbRating by genre (+- 2 SD)
+
+```{r, out.height='65%'}
+ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_sdl, geom = "errorbar")
+```
+
+## Uncertainty of distributions
+
+- By default, mult = 2.
+- If you want to change this, use fun.args in stat_summary()
+
+
+```{r, eval = F}
+ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
+               fun.args = list(mult = 1))
+```
+
+## Uncertainty of distributions
+
+```{r, echo = F}
+ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
+               fun.args = list(mult = 1))
+```
+
+
+## Uncertainty of distributions
+
+use stat_summary() again to add the mean as a red point to the error bar
+
+
+```{r, eval=F}
+ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
+               fun.args = list(mult = 1)) + 
+  stat_summary(fun = mean, geom = 'point', color = 'red', size = 6)
+```
+
+
+## Uncertainty of distributions
+
+```{r, echo=F}
+ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
+               fun.args = list(mult = 1)) + 
+  stat_summary(fun = mean, geom = 'point', color = 'red', size = 6)
+```
+
+
+# Uncertainty of Point Estimate: Confidence intervals
+
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+```{r, echo = F}
+include_graphics('Img/CI.png')
+```
+ 
+ 
+
+## Uncertainty of Point Estimate: Confidence intervals
 
 Hmisc also has functions to construct Confidence Intervals
 
@@ -146,70 +212,11 @@ smean.cl.normal(movies_small$imdbRating, conf.int = 0.95)
 smean.cl.normal(movies_small$imdbRating, conf.int = 0.99)
 ```
 
-## Error bars
-
-- ggplot2 has a wrapper for Hmisc functions: mean_cl_normal, mean_sdl, mean_se
-- To construct the error bars with the functions we will use stat_summary() layer
-
-stat_summary() applies defined function on y by the given values of x.
-No need to summarise with dplyr and create new dataframe
 
 
-## Error bars
 
-Error bars for imdbRating by genre (+- 2 SD)
-
-```{r, out.height='65%'}
-ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
-  stat_summary(fun.data = mean_sdl, geom = "errorbar")
-```
-
-## Error bars
-
-- By default, mult = 2.
-- If you want to change this, use fun.args in stat_summary()
-
-
-```{r, eval = F}
-ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
-  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
-               fun.args = list(mult = 1))
-```
-
-## Error bars
-
-```{r, echo = F}
-ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
-  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
-               fun.args = list(mult = 1))
-```
-
-
-## Error bars
-
-use stat_summary() again to add the mean as a red point to the error bar
-
-
-```{r, eval=F}
-ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
-  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
-               fun.args = list(mult = 1)) + 
-  stat_summary(fun = mean, geom = 'point', color = 'red', size = 6)
-```
-
-
-## Error bars
-
-```{r, echo=F}
-ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
-  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
-               fun.args = list(mult = 1)) + 
-  stat_summary(fun = mean, geom = 'point', color = 'red', size = 6)
-```
  
-# Confidence intervals
- 
-## Confidence intervals
+## Uncertainty of Point Estimate: Confidence intervals
 
 We can visualize confidence intervals with error bars as well
 
@@ -222,7 +229,7 @@ ggplot(movies_small, aes(x = year, y = imdbRating)) +
   stat_summary(fun = mean, geom='point', color = 'red')
 ```
 
-## Confidence Intervals
+## Uncertainty of Point Estimate: Confidence intervals
 
 ```{r, echo = F}
 ggplot(movies_small, aes(x = year, y = imdbRating)) + 
@@ -230,7 +237,7 @@ ggplot(movies_small, aes(x = year, y = imdbRating)) +
   stat_summary(fun = mean, geom='point', color = 'red')
 ```
 
-## Confidence Intervals
+## Uncertainty of Point Estimate: Confidence intervals
 
 Subset the data with the years starting from 1987
 
@@ -243,7 +250,7 @@ ggplot(aes(x = year, y = imdbRating)) +
 ```
 
 
-## Confidence Intervals
+## Uncertainty of Point Estimate: Confidence intervals
 
 ```{r, echo = F}
 movies_small %>% filter(year > 1987) %>% 
@@ -265,7 +272,7 @@ We can look at the error bars
 - Larger is the gap between error bars, more likely you will reject $H_0$
 
 
-## Confidence intervals
+## Uncertainty of Point Estimate: Confidence intervals
 
 Confidence intervals for Height by gender
 
@@ -275,7 +282,7 @@ ggplot(GaltonFamilies, aes(x = gender, y = childHeight)) +
   stat_summary(fun = mean, geom='point', color = 'red') 
 ```
 
-## Confidence Intervals
+## Uncertainty of Point Estimate: Confidence intervals
 
 ```{r, echo = F}
 ggplot(GaltonFamilies, aes(x = gender, y = childHeight)) + 
@@ -297,7 +304,7 @@ $$H_1: \mu_{male}\neq\mu_{female}$$
 t.test(GaltonFamilies$childHeight~GaltonFamilies$gender)
 ```
 
-## Confidence Intervals
+## Uncertainty of Point Estimate: Confidence intervals
 
 Look at the mtcars data
 
@@ -311,7 +318,7 @@ First - t.test
 t.test(mtcars$hp~mtcars$am)
 ```
 
-## Confidence Intervals
+## Uncertainty of Point Estimate: Confidence intervals
 
 Confidence interval
 
@@ -323,7 +330,7 @@ ggplot(mtcars, aes(x = factor(am), y = hp)) +
 ```
 
 
-## Confidence Intervals
+## Uncertainty of Point Estimate: Confidence intervals
 
 ```{r, echo=F, out.height='70%'}
 ggplot(mtcars, aes(x = factor(am), y = hp)) + 

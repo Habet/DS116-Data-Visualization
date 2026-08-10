@@ -525,7 +525,8 @@ unemployment %>% filter(Date< '2019-09-01') %>%
 ```{r, echo = F, out.height='80%'}
 unemployment %>% filter(Date< '2019-09-01') %>% 
   ggplot(aes(x = Date, y = Unemployment, color = Race)) + 
-  geom_line() + coord_cartesian(ylim = c(0, NA))
+  geom_line() + coord_cartesian(ylim = c(0, NA)) + 
+  labs(title = "Unemployment among black and white populations")
 ```
 
 

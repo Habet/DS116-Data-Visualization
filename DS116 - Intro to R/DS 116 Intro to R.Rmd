@@ -842,7 +842,6 @@ mean(students_per_class)
 ```{r}
 heights <- c(165.5, 172.3, 168.0, 175.8, 160.2)
 mean(heights)
-range(heights)
 ```
 
 
@@ -931,7 +930,8 @@ students <- data.frame(
   num_courses = c(5, 4, 6, 5, 4, 5),
   gpa = c(3.5, 3.8, 3.2, 3.9, 3.6, 3.4),
   major = c("CS", "DS", "EC", "CS", "DS", "EC"),
-  year = factor(c("Junior", "Senior", "Sophomore", "Senior", "Junior", "Freshman"),
+  year = factor(c("Junior", "Senior", "Sophomore", "Senior",
+                  "Junior", "Freshman"),
                 levels = c("Freshman", "Sophomore", "Junior", "Senior"),
                 ordered = TRUE)
 )

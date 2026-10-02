@@ -1,6 +1,6 @@
 ---
 title: "DS 116 Data Visualization"
-author: "Habet Madoyan"
+author: "Habet Madoyan, Narek Sahakyan"
 subtitle: "Single numeric variable"
 output:
   beamer_presentation:
@@ -808,4 +808,297 @@ ggplot(movies, aes(sample = budget_adjusted)) +
   geom_qq(distribution = stats::qexp) + 
   geom_qq_line(color = 'red', distribution = stats::qexp)
 ```
+
+
+# Aligning the bins
+
+## Bin center
+
+- Bin width is not the only choice that changes a histogram
+- Each bin also has a position. In ggplot2 that position is set with `center`
+- The same `binwidth` with a different center can turn one peak into a flat top, or move a bump
+- Try more than one center before you describe a mode
+- If `center` is omitted, ggplot still chooses an alignment.
+
+## Bin center
+
+`imdbRating`, binwidth = 0.5, and no `center`. The ticks mark the bin centers.
+
+\small
+```{r, out.height='50%'}
+p_center_default <- ggplot(movies, aes(x = imdbRating)) +
+  geom_histogram(binwidth = 0.5) +
+  ggtitle('center not set')
+p_center_default +
+  scale_x_continuous(breaks = ggplot_build(p_center_default)$data[[1]]$x) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7))
+```
+
+## Bin center
+
+No `center` was passed. ggplot puts a boundary at half the bin width, here 0.25.
+
+\tiny
+```{r, results='asis'}
+bins_default <- ggplot_build(p_center_default)$data[[1]]
+knitr::kable(bins_default[, c('xmin', 'x', 'xmax', 'count')], linesep = '')
+```
+
+## Bin center
+
+`imdbRating`, binwidth = 0.5, center = 0
+
+\small
+```{r, out.height='50%'}
+p_center0 <- ggplot(movies, aes(x = imdbRating)) +
+  geom_histogram(binwidth = 0.5, center = 0) +
+  ggtitle('center = 0')
+p_center0 +
+  scale_x_continuous(breaks = ggplot_build(p_center0)$data[[1]]$x) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7))
+```
+
+## Bin center
+
+`xmin` and `xmax` are the edges, `x` is the center. For this bin width these edges match the default. The tallest bar is the single bin at 6.5.
+
+\tiny
+```{r, results='asis'}
+bins0 <- ggplot_build(p_center0)$data[[1]]
+knitr::kable(bins0[, c('xmin', 'x', 'xmax', 'count')], linesep = '')
+```
+
+## Bin center
+
+Same bin width, center = 0.25
+
+\small
+```{r, out.height='50%'}
+p_center025 <- ggplot(movies, aes(x = imdbRating)) +
+  geom_histogram(binwidth = 0.5, center = 0.25) +
+  ggtitle('center = 0.25')
+p_center025 +
+  scale_x_continuous(breaks = ggplot_build(p_center025)$data[[1]]$x) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7))
+```
+
+## Bin center
+
+`center = 0.25` shifts every edge by 0.25. The peak is now two bins, at 6.25 and 6.75.
+
+\tiny
+```{r, results='asis'}
+bins025 <- ggplot_build(p_center025)$data[[1]]
+knitr::kable(bins025[, c('xmin', 'x', 'xmax', 'count')], linesep = '')
+```
+
+## Bin center
+
+Same ratings, same bin width. The ticks mark each bin center.
+
+```{r, echo = F, out.height='68%'}
+label_centers <- function(p) {
+  p + scale_x_continuous(breaks = ggplot_build(p)$data[[1]]$x) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+          axis.title.x = element_blank())
+}
+g_center0 <- ggplot(movies, aes(x = imdbRating)) +
+  geom_histogram(binwidth = 0.5, center = 0) +
+  ggtitle('center = 0')
+g_center025 <- ggplot(movies, aes(x = imdbRating)) +
+  geom_histogram(binwidth = 0.5, center = 0.25) +
+  ggtitle('center = 0.25')
+ggarrange(label_centers(g_center0), label_centers(g_center025))
+```
+
+
+# Log scale
+
+## Log scale
+
+- Budget, gross, vote counts, and diamond price pile up near zero and then stretch far to the right
+- On a linear axis the histogram is a spike, and the body of the data is hard to read
+- A log scale spreads that body out. Use it when every value is positive
+- In ggplot2, add `scale_x_log10()`
+
+## Log scale
+
+Adjusted budget on a linear axis
+
+\small
+```{r, out.height='65%'}
+ggplot(movies, aes(x = budget_adjusted)) +
+  geom_histogram(bins = 40) +
+  ggtitle('Budget, linear scale')
+```
+
+## Log scale
+
+The same histogram on a log10 axis
+
+\small
+```{r, out.height='48%'}
+ggplot(movies, aes(x = budget_adjusted)) +
+  geom_histogram(bins = 40) +
+  scale_x_log10(labels = scales::label_log()) +
+  labs(x = 'budget_adjusted')
+```
+
+## Log scale
+
+- The log scale shows where most budgets sit. It does not make the variable normal
+- If the logged values follow a normal distribution, the original variable is roughly log-normal
+- Check that claim with a Q-Q plot of `log10(budget_adjusted)`, not by looking at the histogram alone
+
+## Log scale
+
+Q-Q plot of log10 budget. The ends still leave the line, so adjusted budget is not log-normal
+
+\scriptsize
+```{r, out.height='62%'}
+ggplot(movies, aes(sample = log10(budget_adjusted))) +
+  geom_qq() +
+  geom_qq_line(color = 'red')
+```
+
+
+# Log-normal distribution
+
+## Log-normal distribution
+
+- A positive variable is log-normal when its logarithm is close to a normal distribution
+- On the original scale the histogram is right-skewed: most values are small, and a few are very large
+- Taking `log(x)` or `log10(x)` removes that skew. The two logs change only the axis labels, not the shape
+- A right skew alone is not enough. Adjusted budget stayed skewed after the log. The next example does not
+
+## Where it is used
+
+- Body size and other biological measurements that grow by multiplication
+- Incomes, house prices, and the size of cities
+- Insurance claim amounts
+- The example is body weight, in kilograms, for 62 mammal species: `mammals` in the MASS package
+
+## Log-normal distribution
+
+Body weight. Almost every species sits in the first bar. The two elephants stretch the axis.
+
+\small
+```{r, out.height='48%'}
+data(mammals)
+ggplot(mammals, aes(x = body)) +
+  geom_histogram(bins = 20) +
+  ggtitle('Body weight, kg')
+```
+
+## Log-normal distribution
+
+`log10(body)`. A value of 0 is 1 kg, and a value of 3 is 1000 kg. The curve is close to a bell.
+
+\small
+```{r, out.height='52%'}
+ggplot(mammals, aes(x = log10(body))) +
+  geom_histogram(aes(y = after_stat(density)), bins = 12) +
+  geom_density(color = 'red') +
+  ggtitle('log10 of body weight')
+```
+
+## Log-normal distribution
+
+Q-Q plot of body weight. The largest species sit far above the normal line.
+
+\small
+```{r, out.height='58%'}
+ggplot(mammals, aes(sample = body)) +
+  geom_qq() +
+  geom_qq_line(color = 'red')
+```
+
+## Log-normal distribution
+
+Q-Q plot of `log10(body)`. The points stay near the line, so body weight is roughly log-normal.
+
+\small
+```{r, out.height='58%'}
+ggplot(mammals, aes(sample = log10(body))) +
+  geom_qq() +
+  geom_qq_line(color = 'red')
+```
+
+## A typical value
+
+The mean of the log, raised back with `10 ^`, is the geometric mean. It is a typical weight. The ordinary mean is the total weight shared equally, so the largest species pull it up.
+
+```{r}
+c(mean = mean(mammals$body),
+  median = median(mammals$body),
+  geometric_mean = 10 ^ mean(log10(mammals$body)))
+```
+
+## A typical value
+
+- The geometric mean is about 3.8 kg, and the median is about 3.3 kg. The ordinary mean is about 199 kg
+- Quote the geometric mean, or the median, when the question is what a typical species weighs
+- Quote the ordinary mean when the question is the total, because the heavy species really do add kilograms
+- The same choice comes up for prices and incomes: a typical value from the log, and the original scale when the sum is the quantity you need
+
+## Interpreting the two means
+
+- The ordinary mean is the arithmetic mean: add the 62 weights and divide by 62
+- The geometric mean is the arithmetic mean of the logs, brought back with `10 ^`. It is also the 62nd root of the product of the weights
+- Both are centers. The arithmetic mean gives each kilogram the same vote. The geometric mean gives each species the same vote on the log scale
+- The geometric mean is defined only when every value is positive
+
+## Interpreting the two means
+
+- A few heavy species pull the sum, so the arithmetic mean rises to about 199 kg
+- The same species barely move the product. Doubling one weight shifts the geometric mean by as much as halving another
+- On a right-skewed distribution the arithmetic mean is the larger of the two. Here it is about 50 times the geometric mean
+- The geometric mean, about 3.8 kg, stays next to the median, about 3.3 kg. That is the center you see once the weights are on the log scale
+
+
+# Violin plots
+
+## Violin plot
+
+- A violin plot is a density estimate, drawn vertically and mirrored
+- The width at a value shows how common that value is
+- Use it when a boxplot is the chart you would have drawn, and the shape matters
+- A boxplot reports the median and the IQR. It can hide a second peak
+
+## Violin plot
+
+Pooled child height. The box looks symmetric. The violin has two bulges, one for each gender.
+
+\small
+```{r, out.height='46%'}
+ggplot(GaltonFamilies, aes(x = '', y = childHeight)) +
+  geom_violin(fill = 'grey80') +
+  geom_boxplot(width = 0.12) +
+  xlab('') +
+  theme(axis.ticks.x = element_blank())
+```
+
+## Violin plot
+
+Split by gender. Each group has one peak, and the two peaks sit in different places.
+
+\small
+```{r, out.height='52%'}
+ggplot(GaltonFamilies, aes(x = gender, y = childHeight)) +
+  geom_violin(fill = 'grey80') +
+  geom_boxplot(width = 0.15)
+```
+
+## Violin plot
+
+- Keep the boxplot inside the violin. The violin shows the shape, the box shows the median and the IQR
+- Each group needs enough observations to support a smooth density
+- As with a density plot, the outline can extend slightly past values that do not occur in the data
+
+## Using these tools
+
+- If a peak appears or disappears when the bin width changes, also change `center`
+- If a positive variable is piled on the left, such as budget, gross, votes, or price, redraw it with `scale_x_log10()`
+- A log scale shows the body of the data. Confirm a log-normal claim with a Q-Q plot of the logged values
+- When comparing groups, and a second peak would change the story, draw a violin with a boxplot inside
 

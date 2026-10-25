@@ -983,7 +983,8 @@ sigma_m
 ```
 
 ```{r}
-df_norm <- mvrnorm(n = 1000,mu = c(10,10), Sigma = sigma_m) %>% data.frame()
+df_norm <- mvrnorm(n = 1000, mu = c(10, 10), Sigma = sigma_m)
+df_norm <- data.frame(df_norm)
 ```
 
 

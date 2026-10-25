@@ -1,0 +1,103 @@
+---
+title: "DS 116: What number goes in the brief?"
+subtitle: "Case study answer key (20 minutes)"
+author: "Habet Madoyan"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.show = "hold", fig.width = 6, fig.height = 3.2,
+                      fig.align = "center", out.width = "88%")
+options(scipen = 999)
+```
+
+Walk the room with one question: "Which number are you quoting, and which plot made you choose it?"
+
+Cut Task 3 if the first two run long. The early-finish block is population, the same check as Task 1, and it is not required.
+
+The data are Gapminder's 2007 country figures (Gapminder Foundation, CC BY 4.0): one row per country.
+
+```{r}
+library(ggplot2)
+gap <- read.csv('Data/gapminder_2007.csv')
+```
+
+## Task 1. What typical income should the brief quote? (7 minutes)
+
+Income is `gdpPercap`.
+
+```{r task1}
+ggplot(gap, aes(x = gdpPercap)) +
+  geom_histogram(bins = 30) +
+  ggtitle('Income, linear scale')
+
+ggplot(gap, aes(x = gdpPercap)) +
+  geom_histogram(bins = 30) +
+  scale_x_log10(labels = scales::label_log()) +
+  ggtitle('Income, log10 scale')
+
+ggplot(gap, aes(sample = log10(gdpPercap))) +
+  geom_qq() +
+  geom_qq_line(color = 'red') +
+  ggtitle('Q-Q plot of log10 income')
+
+c(mean = mean(gap$gdpPercap),
+  median = median(gap$gdpPercap),
+  geometric_mean = 10 ^ mean(log10(gap$gdpPercap)))
+```
+
+**Answer.** The linear histogram is a spike near zero and a long right tail, so most countries disappear and the mean (about 11,700 dollars) is pulled up by a few rich ones. The log10 histogram is the plot that shows the body of the data. On the Q-Q plot of `log10(gdpPercap)` the middle follows the line and the two ends bend away, so income is only roughly log-normal: much closer to that shape than the raw numbers are to a normal curve, and not an exact fit. The geometric mean (about 5,500 dollars) sits next to the median (about 6,100 dollars). Quote one of those two for a typical country. Quote the mean only when the brief is about the average dollar.
+
+## Task 2. Is life expectancy the same kind of variable? (5 minutes)
+
+```{r task2}
+med <- median(gap$lifeExp)
+avg <- mean(gap$lifeExp)
+ggplot(gap, aes(x = lifeExp)) +
+  stat_ecdf() +
+  geom_vline(xintercept = c(med, avg), color = c('red', 'green')) +
+  ggtitle('eCDF of life expectancy (red = median, green = mean)')
+c(mean = avg, median = med)
+```
+
+**Answer.** The green line (mean, about 67 years) sits to the left of the red line (median, about 72). The long tail is on the low side, toward countries with life expectancy in the low 40s, so the skew is to the left. A log scale is the wrong next step. Life expectancy is not a positive amount piled up at zero, and taking the log would not make this tail into a bell.
+
+## Task 3. Does the continent change the income number? (6 minutes)
+
+```{r task3}
+ggplot(gap, aes(x = continent, y = gdpPercap)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = 'point', color = 'red') +
+  ggtitle('Income by continent (red = mean)')
+
+ggplot(gap, aes(x = continent, y = gdpPercap)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = 'point', color = 'red') +
+  scale_y_log10() +
+  ggtitle('Income by continent, log10 scale')
+```
+
+**Answer.** On the linear scale Africa is crushed against the axis and Asia's upper tail sets the scale. The log scale is the plot to read. Asia's mean sits well above its median: Kuwait, Singapore, and Hong Kong pull it up, so the mean is a poor summary of a typical Asian country. Europe's mean sits slightly below its median, because the lower tail (Albania and several Balkan countries) pulls it down. Oceania is Australia and New Zealand only. Two points are not a distribution, so do not describe an Oceanian spread, and do not draw a violin for that group.
+
+## If you finish early
+
+```{r extra}
+ggplot(gap, aes(x = pop)) +
+  geom_histogram(bins = 30) +
+  ggtitle('Population, linear scale')
+
+ggplot(gap, aes(sample = log10(pop))) +
+  geom_qq() +
+  geom_qq_line(color = 'red') +
+  ggtitle('Q-Q plot of log10 population')
+
+c(mean = mean(gap$pop),
+  median = median(gap$pop),
+  geometric_mean = 10 ^ mean(log10(gap$pop)))
+```
+
+**Answer.** Population is more extremely right-skewed than income, and its log10 Q-Q plot is closer to a straight line, so population is a cleaner log-normal example than income. The mean (about 44 million) describes no typical country. The median (about 10.5 million) and the geometric mean (about 11.7 million) do.

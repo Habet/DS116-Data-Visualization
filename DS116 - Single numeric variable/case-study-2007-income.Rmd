@@ -1,0 +1,75 @@
+---
+title: "DS 116: What number goes in the brief?"
+subtitle: "Case study, single numeric variable (20 minutes)"
+author: "Narek Sahakyan"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.show = "hold", fig.width = 6, fig.height = 3.2,
+                      fig.align = "center", out.width = "88%")
+options(scipen = 999)
+```
+
+A development agency is writing a one-page brief on the world in 2007. The table has one row per country: life expectancy, GDP per capita (income, in international dollars), and population.
+
+The data are Gapminder's 2007 country figures (Gapminder Foundation, CC BY 4.0). Stay with one variable at a time. Do not draw a scatterplot.
+
+You have 20 minutes. Each task is one or two plots and one sentence.
+
+```{r}
+library(ggplot2)
+gap <- read.csv('Data/gapminder_2007.csv')
+```
+
+## Task 1. What typical income should the brief quote? (7 minutes)
+
+Income is `gdpPercap`.
+
+1. Draw a histogram.
+2. Draw the same histogram on a log10 scale (`scale_x_log10`).
+3. Draw a normal Q-Q plot of `log10(gdpPercap)`.
+4. Compute the mean, the median, and the geometric mean, `10 ^ mean(log10(gdpPercap))`.
+
+Sentence: which of the three numbers belongs in the brief, and is income roughly log-normal?
+
+```{r task1}
+
+```
+
+## Task 2. Is life expectancy the same kind of variable? (5 minutes)
+
+Life expectancy is `lifeExp`.
+
+Draw an eCDF and mark the median in red and the mean in green. Read which line sits further left.
+
+Sentence: which way is the skew, and would a log scale be the right next step?
+
+```{r task2}
+
+```
+
+## Task 3. Does the continent change the income number? (6 minutes)
+
+1. Draw a boxplot of `gdpPercap` by `continent`, with the mean as a red point.
+2. Draw the same boxplot with `scale_y_log10()`.
+
+Oceania is Australia and New Zealand only.
+
+Sentence: for which continent is the mean a poor summary of a typical country, and what do you do with Oceania?
+
+```{r task3}
+
+```
+
+## Task 4 Check for lognormality
+
+`pop` is the population of each country. Check whether a log makes it close to normal, and compute the mean, the median, and the geometric mean. Which number describes a typical country?
+
+```{r task4}
+
+```

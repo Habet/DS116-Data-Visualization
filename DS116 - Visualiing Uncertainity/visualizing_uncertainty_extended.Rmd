@@ -1,0 +1,467 @@
+---
+title: "DS 116 - Data Visualization"
+subtitle: "Visualizing Uncertainty"
+author: "Habet Madoyan"
+institute: "American University of Armenia" 
+fontsize: 10pt
+output:
+  beamer_presentation:
+    theme: "CambridgeUS"
+    colortheme: "dolphin"
+    fonttheme: "structurebold"
+    pandoc_args: '--pdf-engine=xelatex'
+    includes:
+      in_header: 'latex-topmatter.tex'
+   
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy = F,  collapse = TRUE, warning=F, message = F, out.width = '80%', 
+                      size = 'footnotesize')
+options(scipen = 999)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(Hmisc)
+library(HistData)
+```
+
+
+```{r, echo = F}
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "footnotesize", paste0("\n \\", options$size,"\n\n", x, "\n\n \\footnotesize"), x)
+})
+```
+
+
+
+
+## Visualizing uncertainty
+
+There are many sources of uncertainty
+
+- Uncertainty of distributions
+- Uncertainty of point estimates
+- Uncertainty of predictions (curve fit) etc..
+ 
+ 
+# Uncertainty of distributions
+ 
+
+ 
+
+## Uncertainty of distributions
+ 
+ Uncertainty with standard deviations
+ 
+```{r, echo = F}
+include_graphics('Img/SD.png')
+```
+ 
+
+## Uncertainty of distributions
+
+```{r}
+movies_small <- read.csv('Data/movies_small.csv')
+summarised <-  movies_small %>% summarise(mean = mean(imdbRating), 
+                                    sd = sd(imdbRating))
+summarised
+```
+
+## Uncertainty of distributions
+
+\scriptsize
+```{r, out.height='60%'}
+ggplot(summarised, mapping = aes(x = "", y = mean, ymax = mean+sd,
+                                 ymin = mean-sd)) + geom_errorbar()
+```
+
+## Uncertainty of distributions
+
+\scriptsize
+```{r, out.height='60%'}
+ggplot(summarised, mapping = aes(x = mean, y = "",  xmax = mean+sd,
+                                 xmin = mean-sd)) + geom_errorbarh()
+```
+
+## Uncertainty of distributions
+
+If you want to look at the error bars by groups - summarise by groups using dplyr
+
+```{r}
+summarised <-  movies_small  %>% group_by(genre_first) %>% 
+  summarise(mean = mean(imdbRating), sd = sd(imdbRating))
+summarised
+```
+
+## Uncertainty of distributions
+ 
+ - use the grouping variable as x aesthetics 
+ 
+\scriptsize 
+```{r, out.height='50%'}
+ggplot(summarised, aes(x = genre_first, y = mean, ymin=mean-sd, 
+                       ymax = mean+sd)) + geom_errorbar()
+```
+
+## Uncertainty of distributions
+ 
+There are few functions in R that can be used for generating the data for error bars
+ 
+ - +- 1 SD
+```{r}
+smean.sdl(movies_small$imdbRating, mult = 1)
+```
+
+- +- 2sd
+
+```{r}
+smean.sdl(movies_small$imdbRating, mult = 2)
+```
+
+
+## Uncertainty of distributions
+
+- ggplot2 has a wrapper for Hmisc functions: mean_cl_normal, mean_sdl, mean_se
+- To construct the error bars with the functions we will use stat_summary() layer
+
+stat_summary() applies defined function on y by the given values of x.
+No need to summarise with dplyr and create new dataframe
+
+
+## Uncertainty of distributions
+
+Error bars for imdbRating by genre (+- 2 SD)
+
+```{r, out.height='65%'}
+ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_sdl, geom = "errorbar")
+```
+
+## Uncertainty of distributions
+
+- By default, mult = 2.
+- If you want to change this, use fun.args in stat_summary()
+
+
+```{r, eval = F}
+ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
+               fun.args = list(mult = 1))
+```
+
+## Uncertainty of distributions
+
+```{r, echo = F}
+ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
+               fun.args = list(mult = 1))
+```
+
+
+## Uncertainty of distributions
+
+use stat_summary() again to add the mean as a red point to the error bar
+
+
+```{r, eval=F}
+ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
+               fun.args = list(mult = 1)) + 
+  stat_summary(fun = mean, geom = 'point', color = 'red', size = 6)
+```
+
+
+## Uncertainty of distributions
+
+```{r, echo=F}
+ggplot(movies_small, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_sdl, geom = "errorbar", 
+               fun.args = list(mult = 1)) + 
+  stat_summary(fun = mean, geom = 'point', color = 'red', size = 6)
+```
+
+
+# Uncertainty of Point Estimate: Confidence intervals
+
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+```{r, echo = F}
+include_graphics('Img/CI.png')
+```
+ 
+ 
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+Hmisc also has functions to construct Confidence Intervals
+
+- 95%
+
+```{r}
+smean.cl.normal(movies_small$imdbRating, conf.int = 0.95)
+```
+
+- 99% confidence interval
+ 
+```{r}
+smean.cl.normal(movies_small$imdbRating, conf.int = 0.99)
+```
+
+
+
+
+ 
+## Uncertainty of Point Estimate: Confidence intervals
+
+We can visualize confidence intervals with error bars as well
+
+- mean_cl_normal will create 95% CI by default
+
+
+```{r, eval = F}
+ggplot(movies_small, aes(x = year, y = imdbRating)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom='point', color = 'red')
+```
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+```{r, echo = F}
+ggplot(movies_small, aes(x = year, y = imdbRating)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom='point', color = 'red')
+```
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+Subset the data with the years starting from 1987
+
+
+```{r, eval = F}
+movies_small %>% filter(year > 1987) %>% 
+ggplot(aes(x = year, y = imdbRating)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom='point', color = 'red')
+```
+
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+```{r, echo = F}
+movies_small %>% filter(year > 1987) %>% 
+ggplot(aes(x = year, y = imdbRating)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom='point', color = 'red')
+```
+
+## Confidence Intervals
+
+Error bars with confidence intervals can help us to do initial hypothesis testing
+
+$$ H_0: \mu_0=\mu_1$$
+$$H_1: \mu_0\neq\mu_1$$
+
+We can look at the error bars
+
+- No intersection of the bars is an indicator of rejecting the null hypothesis
+- Larger is the gap between error bars, more likely you will reject $H_0$
+
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+Confidence intervals for Height by gender
+
+```{r, eval = F}
+ggplot(GaltonFamilies, aes(x = gender, y = childHeight)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom='point', color = 'red') 
+```
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+```{r, echo = F}
+ggplot(GaltonFamilies, aes(x = gender, y = childHeight)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom='point', color = 'red') 
+```
+
+
+## Confidence Intervals
+
+Testing the hypothesis
+
+
+$$ H_0: \mu_{male}=\mu_{female}$$
+$$H_1: \mu_{male}\neq\mu_{female}$$
+
+\scriptsize
+```{r}
+t.test(GaltonFamilies$childHeight~GaltonFamilies$gender)
+```
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+Look at the mtcars data
+
+- hp Horsepower
+- am transmission automatics vs manual
+
+First - t.test
+
+\scriptsize
+```{r}
+t.test(mtcars$hp~mtcars$am)
+```
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+Confidence interval
+
+
+```{r, eval=F}
+ggplot(mtcars, aes(x = factor(am), y = hp)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom='point', color = 'red')
+```
+
+
+## Uncertainty of Point Estimate: Confidence intervals
+
+```{r, echo=F, out.height='70%'}
+ggplot(mtcars, aes(x = factor(am), y = hp)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom='point', color = 'red')
+```
+
+## Reading the hp result
+
+$$H_0: \mu_{automatic} = \mu_{manual}$$
+
+- Sample means: 160 hp for automatic, 127 hp for manual
+- The two confidence intervals overlap heavily
+- $t = 1.27$, p-value $= 0.22$, larger than 0.05
+- The 95% CI for the difference, $-21.9$ to $88.7$, contains 0
+- We **fail to reject** $H_0$
+
+## Why a 33 hp gap is not enough
+
+- Only 19 automatic and 13 manual cars
+- Horsepower varies a lot inside each group: sd 54 and 84
+- Standard error of the difference: $\sqrt{s_0^2/n_0 + s_1^2/n_1} \approx 26$ hp
+- A 33 hp gap is only about 1.3 standard errors
+- Gaps that size happen often by chance alone
+
+## Fail to reject is not "equal"
+
+- Failing to reject means the data cannot tell the means apart
+- It does not prove that $\mu_0 = \mu_1$
+- The CI for the difference still allows a real gap of up to 89 hp
+- More cars would give narrower bars and might reveal a difference
+
+## Another example: Comedy vs Animation
+
+Does the average IMDb rating differ?
+
+```{r}
+comedy_animation <- movies_small %>% 
+  filter(genre_first %in% c('Comedy', 'Animation'))
+```
+
+```{r, eval = F}
+ggplot(comedy_animation, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom = 'point', color = 'red')
+```
+
+## Another example: Comedy vs Animation
+
+```{r, echo = F, out.height='70%'}
+ggplot(comedy_animation, aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom = 'point', color = 'red')
+```
+
+## Another example: Comedy vs Animation
+
+```{r, collapse = FALSE}
+t.test(imdbRating ~ genre_first, data = comedy_animation)
+```
+
+## Another example: Comedy vs Animation
+
+- Animation 6.43 vs Comedy 6.13: a gap of 0.30
+- Animation has only 24 movies, so its bar is wide
+- The bars overlap, p-value $= 0.16$
+- The CI for the difference contains 0
+- We fail to reject $H_0$
+
+## Smaller gap, but significant
+
+- Animation vs Comedy: gap 0.30, p = 0.16
+- Action vs Comedy: gap 0.15, p = 0.01
+
+```{r, echo = F, out.height='50%'}
+movies_small %>% 
+  filter(genre_first %in% c('Action', 'Comedy', 'Animation')) %>% 
+  ggplot(aes(x = genre_first, y = imdbRating)) + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar") + 
+  stat_summary(fun = mean, geom = 'point', color = 'red')
+```
+
+## Smaller gap, but significant
+
+- Action 6.28 vs Comedy 6.13: a gap of only 0.15
+- 549 and 668 movies, so both bars are short
+- p-value $= 0.01$: we reject $H_0$
+- Yet the two bars still overlap slightly
+- Bars that do not overlap mean a significant difference
+- Bars that overlap a little can still be significant: run the t-test
+- Sample size decides the width of the bars as much as the gap does
+
+
+# Uncertainty in curve fit
+
+## Uncertainty in curve fit
+
+When we fit a model into the data, we sometimes look for answers to the following questions:
+
+- What is the mean response for a particular value of x?
+- In which interval will these value lie
+
+## Uncertainty in curve fit
+
+To answer these questions, we can construct confidence interval around the regression line, using the following formula:
+
+
+$$\hat{y}_h \pm t_{\alpha / 2, n - 2} \sqrt{MSE \left(\frac{1}{n} + \frac{(x_k - \bar{x})^2}{\sum(x_i - \bar{x}^2)} \right)}$$
+
+Wider is the confidence interval, more uncertainty we would have for that specific $x$ value.
+
+
+## Uncertainty in curve fit
+
+To get the confidence interval on the graph, specify se=TRUE (the default option) either in stat_smooth or geom_smooth
+
+\tiny
+```{r, out.height='65%'}
+ggplot(mtcars, aes(x = hp, y = mpg)) + geom_point() +
+  geom_smooth(method = 'lm')
+```
+
+## Uncertainty in curve fit
+
+As you can see from the formula, further away you go from the mean, larger becomes the confidence interval
+
+\tiny
+```{r, out.height='65%'}
+ggplot(mtcars, aes(x = hp, y = mpg)) + geom_point() + 
+  geom_smooth(method = 'lm') + 
+  geom_vline(xintercept = mean(mtcars$hp), color = 'red')
+```
+
+

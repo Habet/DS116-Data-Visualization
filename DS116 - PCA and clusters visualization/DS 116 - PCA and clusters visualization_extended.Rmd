@@ -1,0 +1,1405 @@
+---
+title: "DS 116 -Data Visualization"
+subtitle: "PCA and Clustering"
+author: "Habet Madoyan"
+institute: "American University of Armenia" 
+fontsize: 10pt
+output:
+  beamer_presentation:
+    theme: "CambridgeUS"
+    colortheme: "dolphin"
+    fonttheme: "structurebold"
+    pandoc_args: '--pdf-engine=xelatex'
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = FALSE)
+
+
+options(scipen = 999)
+
+library(ggplot2)
+library(dplyr)
+library(GGally)
+library(knitr)
+library(ggcorrplot)
+library(readxl)
+library(FactoMineR)
+library(factoextra)
+library(pheatmap)
+library(ggrepel)
+library(scatterplot3d)
+
+```
+
+```{r city-example-data, include=FALSE}
+city_indicators <- c(
+  "Factories", "Freight", "Pollution", "Universities",
+  "Bookstores", "Cafes", "Hotels", "Parks"
+)
+
+city_example <- data.frame(
+  City = c(
+    "Steelport", "Millhaven", "Ironridge",
+    "College Park", "Booktown", "Campus Bay",
+    "Seaview", "Oldport", "Laketown"
+  ),
+  Factories = c(90, 84, 88, 20, 15, 22, 25, 18, 28),
+  Freight = c(86, 80, 83, 18, 22, 16, 40, 35, 38),
+  Pollution = c(78, 74, 81, 25, 20, 28, 30, 26, 33),
+  Universities = c(15, 22, 18, 92, 88, 85, 30, 35, 28),
+  Bookstores = c(12, 18, 14, 80, 86, 78, 40, 45, 38),
+  Cafes = c(30, 28, 35, 84, 79, 88, 70, 74, 68),
+  Hotels = c(25, 30, 22, 35, 40, 32, 90, 86, 92),
+  Parks = c(20, 24, 18, 70, 66, 74, 82, 78, 85),
+  stringsAsFactors = FALSE
+)
+
+city_type <- c(
+  rep("Industrial", 3), rep("University", 3), rep("Tourism", 3)
+)
+
+city_mat <- as.matrix(city_example[, city_indicators])
+rownames(city_mat) <- city_example$City
+city_pca <- prcomp(city_mat, center = TRUE, scale. = TRUE)
+city_scores <- data.frame(
+  City = city_example$City,
+  Type = factor(city_type, levels = c("Industrial", "University", "Tourism")),
+  city_pca$x[, 1:2]
+)
+city_var <- city_pca$sdev^2 / sum(city_pca$sdev^2)
+
+city_pair <- function(city_a, city_b) {
+  data.frame(
+    indicator = city_indicators,
+    x = as.numeric(city_example[city_example$City == city_a, city_indicators]),
+    y = as.numeric(city_example[city_example$City == city_b, city_indicators]),
+    stringsAsFactors = FALSE
+  )
+}
+
+city_pair_plot <- function(city_a, city_b, subtitle) {
+  df <- city_pair(city_a, city_b)
+  ggplot(df, aes(x, y)) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey75") +
+    geom_smooth(method = "lm", se = FALSE, color = "#b2182b", linewidth = 0.7) +
+    geom_point(size = 2.6, color = "#08519c") +
+    geom_text_repel(
+      aes(label = indicator), size = 3, seed = 1,
+      box.padding = 0.35, max.overlaps = 20
+    ) +
+    scale_x_continuous(limits = c(0, 108), breaks = seq(0, 100, 25)) +
+    scale_y_continuous(limits = c(0, 108), breaks = seq(0, 100, 25)) +
+    labs(x = city_a, y = city_b, subtitle = subtitle) +
+    theme_bw(base_size = 12) +
+    theme(plot.subtitle = element_text(size = 11))
+}
+
+city_colors <- c(
+  Industrial = "#d95f02", University = "#7570b3", Tourism = "#1b9e77"
+)
+
+city_label_pos <- data.frame(
+  City = city_example$City,
+  lx = c(-4.15, -2.15, -3.40, 0.85, 3.35, 2.25, -0.15, 2.40, 0.15),
+  ly = c(-0.05, -0.20, 1.00, 1.45, 1.05, 2.00, -1.20, -1.05, -2.30),
+  hjust = c(1, 0, 0.5, 1, 0, 0.5, 1, 0, 0),
+  stringsAsFactors = FALSE
+)
+
+city_score_plot <- function(color_groups) {
+  lab <- merge(city_scores, city_label_pos, by = "City", sort = FALSE)
+  p <- ggplot(city_scores, aes(PC1, PC2)) +
+    geom_segment(
+      data = lab,
+      aes(x = PC1, y = PC2, xend = lx, yend = ly),
+      color = "grey55", linewidth = 0.3
+    )
+  if (color_groups) {
+    p <- p +
+      geom_point(aes(color = Type), size = 3) +
+      geom_text(
+        data = lab,
+        aes(x = lx, y = ly, label = City, color = Type, hjust = hjust),
+        size = 3.2, show.legend = FALSE
+      ) +
+      scale_color_manual(values = city_colors)
+  } else {
+    p <- p +
+      geom_point(size = 3, color = "#08519c") +
+      geom_text(
+        data = lab,
+        aes(x = lx, y = ly, label = City, hjust = hjust),
+        size = 3.2, color = "grey15"
+      )
+  }
+  p +
+    coord_cartesian(xlim = c(-5.8, 4.5), ylim = c(-2.6, 2.25)) +
+    labs(
+      x = sprintf("PC1 (%.0f%% of the variation)", 100 * city_var[1]),
+      y = sprintf("PC2 (%.0f%% of the variation)", 100 * city_var[2]),
+      color = NULL
+    ) +
+    theme_bw(base_size = 12) +
+    theme(legend.position = "bottom")
+}
+```
+
+# Correlations among cases
+
+## Cases can look the same from the outside
+
+Cells, people, and cities can share a label and still differ in what they do.
+
+We measure many features of each case:
+
+- For a cell: how active each gene is
+- For a person: weight, blood pressure, reading level
+- For a city: factories, universities, hotels, parks
+
+Those measurements are how the hidden types show up.
+
+## Nine cities, eight indicators
+
+Each score runs from 0 to 100. The type of each city stays hidden for now.
+
+\scriptsize
+
+```{r city-table, echo=FALSE, results="asis"}
+city_show <- city_example
+names(city_show) <- c(
+  "City", "Fact.", "Freight", "Poll.", "Univ.", "Books", "Cafes", "Hotels", "Parks"
+)
+tab <- knitr::kable(city_show, format = "latex", booktabs = FALSE, align = "lrrrrrrrr")
+cat("\\resizebox{\\linewidth}{!}{%\n")
+cat(tab, sep = "\n")
+cat("}")
+```
+
+## Steelport and College Park move in opposite directions
+
+```{r city-pair-opposite, echo=FALSE, fig.width=6.2, fig.height=4.6, out.width="72%", out.height="78%", fig.align="center"}
+city_pair_plot(
+  "Steelport", "College Park",
+  "Each point is one indicator. Correlation = -0.86"
+)
+```
+
+## Steelport and Millhaven move together
+
+```{r city-pair-together, echo=FALSE, fig.width=6.2, fig.height=4.6, out.width="72%", out.height="78%", fig.align="center"}
+city_pair_plot(
+  "Steelport", "Millhaven",
+  "High together and low together. Correlation = 1.00"
+)
+```
+
+## Millhaven and College Park move in opposite directions
+
+```{r city-pair-third, echo=FALSE, fig.width=6.2, fig.height=4.6, out.width="72%", out.height="78%", fig.align="center"}
+city_pair_plot(
+  "Millhaven", "College Park",
+  "The university city follows the opposite pattern. Correlation = -0.88"
+)
+```
+
+## Three cities can share one 3D plot
+
+One axis per city. Each point is still an indicator.
+
+```{r city-3d, echo=FALSE, fig.width=6.8, fig.height=4.6, out.width="82%", fig.align="center"}
+pair3 <- cbind(
+  city_pair("Steelport", "Millhaven"),
+  CollegePark = city_pair("Steelport", "College Park")$y
+)
+point_col <- ifelse(pair3$x >= pair3$CollegePark, "#d95f02", "#7570b3")
+scatterplot3d(
+  pair3$x, pair3$y, pair3$CollegePark,
+  pch = 16, color = point_col, cex.symbols = 1.3,
+  type = "h", lty.hplot = 2,
+  xlab = "Steelport", ylab = "Millhaven", zlab = "College Park",
+  grid = TRUE, box = FALSE, angle = 55,
+  xlim = c(0, 100), ylim = c(0, 100), zlim = c(0, 115),
+  cex.lab = 0.95, mar = c(3, 3, 1, 2)
+)
+legend(
+  "topright",
+  legend = c("Higher in the factory cities", "Higher in College Park"),
+  col = c("#d95f02", "#7570b3"), pch = 16, bty = "n", cex = 0.9
+)
+```
+
+## More cities make these plots unusable
+
+The number of pairwise plots for \(n\) cities is
+
+\[
+\frac{n(n-1)}{2}
+\]
+
+- 6 cities: 15 plots
+- 20 cities: 190 plots
+- 50 cities: 1,225 plots
+
+A plot with one axis per city becomes impossible to read at four cities. PCA replaces that pile of plots with one flat graph.
+
+# Dimensionality Reduction / Principal Component Analysis
+
+## Principal Component Analysis
+
+**Why to use dimension reduction?**
+
+Find latent hidden variables that are not/cannot be directly measured -
+Reveal the hidden structure of the data - Transform the feature space
+into variables that are not correlated, thus new variables can be used
+in different machine learning techniques
+
+\vspace{0.3cm}
+
+```{r, echo = F, out.width= "80%"}
+include_graphics('Img/figure_1.png')
+```
+
+## Principal Components Analysis (PCA)
+
+-   PCA is a technique that can be used to simplify a dataset
+
+-   It is a linear transformation that chooses a new coordinate system
+    for the data set such that greatest variance by any projection of
+    the data set comes to lie on the first axis (called the first
+    principal component), the second greatest variance on the second
+    axis, and so on.
+
+-   PCA can be used for reducing dimensionality by eliminating the later
+    principal components.
+
+## Principal Components Analysis (PCA)
+
+Each new Component/factor is a linear combination of all variables.
+
+Imagine we have p variables ($X_j, j = 1, 2, ..., p$)
+
+$$
+Z_i = \sum_{i=1}^p w_{ij}X_j
+$$
+
+$$
+Z_i = w_{i1}X_1 + w_{i2}X_2 + ... + w_{ip}X_p
+$$ where each pair of Z’s are orthogonal (correlation = 0)!
+
+After estimating weights w, Z’s are ordered by their variance, with
+$Z_1$ having the largest variance and $Z_p$ having the smallest
+variance.
+
+## PCA plots the cities
+
+- In the pairwise plots, each axis was a city and each point was an indicator.
+- In a PCA plot, each point is a city.
+- Cities with similar indicator profiles land close together.
+
+## Similar cities form clusters
+
+```{r city-pca-plain, echo=FALSE, fig.width=7.4, fig.height=4.5, out.width="90%", fig.align="center"}
+city_score_plot(color_groups = FALSE)
+```
+
+## Color names the three groups
+
+```{r city-pca-color, echo=FALSE, fig.width=7.4, fig.height=4.6, out.width="90%", fig.align="center"}
+city_score_plot(color_groups = TRUE)
+```
+
+## The clusters use different indicators
+
+```{r city-heatmap, echo=FALSE, fig.width=7.4, fig.height=4.3, out.width="92%", out.height="76%", fig.align="center"}
+heat <- expand.grid(
+  City = city_example$City,
+  Indicator = city_indicators,
+  KEEP.OUT.ATTRS = FALSE,
+  stringsAsFactors = FALSE
+)
+heat$value <- mapply(function(city, indicator) {
+  city_example[city_example$City == city, indicator]
+}, heat$City, heat$Indicator)
+heat$City <- factor(heat$City, levels = city_example$City)
+heat$Indicator <- factor(heat$Indicator, levels = rev(city_indicators))
+
+ggplot(heat, aes(City, Indicator, fill = value)) +
+  geom_tile(color = "white", linewidth = 0.4) +
+  scale_fill_gradient(
+    low = "#deebf7", high = "#08519c", limits = c(0, 100), name = "Score"
+  ) +
+  scale_x_discrete(expand = c(0, 0)) +
+  scale_y_discrete(expand = c(0, 0)) +
+  labs(
+    x = NULL, y = NULL,
+    subtitle = "Factories, freight, pollution  |  universities, books, cafes  |  hotels and parks"
+  ) +
+  theme_bw(base_size = 10) +
+  theme(
+    axis.text.x = element_text(
+      angle = 35, hjust = 1,
+      color = rep(unname(city_colors), each = 3)
+    ),
+    legend.position = "right",
+    plot.subtitle = element_text(size = 9)
+  )
+```
+
+## PC1 carries more variation than PC2
+
+```{r city-variance, echo=FALSE, fig.width=6.4, fig.height=3.6, out.width="78%", out.height="62%", fig.align="center"}
+var_df <- data.frame(
+  component = factor(paste0("PC", 1:4), levels = paste0("PC", 1:4)),
+  pct = round(100 * city_var[1:4], 1)
+)
+ggplot(var_df, aes(component, pct)) +
+  geom_col(fill = "#08519c", width = 0.65) +
+  geom_text(aes(label = paste0(pct, "%")), vjust = -0.4, size = 3.4) +
+  scale_y_continuous(limits = c(0, 100), expand = c(0, 0)) +
+  labs(
+    x = NULL, y = "Share of variation (%)",
+    subtitle = "Factory versus the rest is PC1. University versus tourism is PC2."
+  ) +
+  theme_bw(base_size = 12) +
+  theme(plot.subtitle = element_text(size = 11))
+```
+
+## A gap on PC1 is the larger difference
+
+```{r city-gap-schematic, echo=FALSE, fig.width=6.4, fig.height=5.4, out.width="62%", fig.align="center"}
+set.seed(11)
+schematic <- data.frame(
+  group = factor(
+    rep(c("A", "B", "C"), each = 30),
+    levels = c("A", "B", "C")
+  ),
+  PC1 = c(rnorm(30, -1.5, 0.14), rnorm(30, 1.5, 0.14), rnorm(30, 1.5, 0.14)),
+  PC2 = c(rnorm(30, 0, 0.14), rnorm(30, 0, 0.14), rnorm(30, -3, 0.14))
+)
+ggplot(schematic, aes(PC1, PC2, color = group)) +
+  geom_point(size = 1.8, alpha = 0.85) +
+  annotate("segment", x = -1.5, xend = 1.5, y = 0.55, yend = 0.55, linewidth = 0.4) +
+  annotate("segment", x = 2.15, xend = 2.15, y = 0, yend = -3, linewidth = 0.4) +
+  annotate("text", x = 0, y = 0.85, label = "PC1 gap", size = 3.3) +
+  annotate("text", x = 2.7, y = -1.5, label = "PC2 gap", size = 3.3) +
+  scale_color_manual(values = c(A = "#d95f02", B = "#7570b3", C = "#1b9e77")) +
+  coord_equal(xlim = c(-2.4, 3.3), ylim = c(-3.7, 1.3)) +
+  labs(
+    color = NULL,
+    x = "PC1 (larger share of variation)",
+    y = "PC2 (smaller share of variation)",
+    subtitle = "The two gaps are the same length. The PC1 gap is the larger difference."
+  ) +
+  theme_bw(base_size = 11) +
+  theme(legend.position = "bottom", plot.subtitle = element_text(size = 10))
+```
+
+```{r mouse-example-data, include=FALSE}
+set.seed(4)
+mouse_n <- 18
+mouse_angle <- 28 * pi / 180
+mouse_s1 <- rnorm(mouse_n, 0, 2)
+mouse_s2 <- rnorm(mouse_n, 0, 0.85)
+mouse_s3 <- rnorm(mouse_n, 0, 0.35)
+mice <- data.frame(
+  gene1 = 12 + mouse_s1 * cos(mouse_angle) - mouse_s2 * sin(mouse_angle),
+  gene2 = 9 + mouse_s1 * sin(mouse_angle) + mouse_s2 * cos(mouse_angle),
+  gene3 = 7 + 0.25 * mouse_s1 + 0.35 * mouse_s2 + mouse_s3
+)
+mice_mean <- colMeans(mice[, 1:2])
+mice_cent <- as.data.frame(scale(mice[, 1:2], center = TRUE, scale = FALSE))
+names(mice_cent) <- c("gene1", "gene2")
+mice_pca <- prcomp(mice[, 1:2], center = TRUE, scale. = FALSE)
+mice_pca3 <- prcomp(mice, center = TRUE, scale. = FALSE)
+mice_share <- mice_pca$sdev^2 / sum(mice_pca$sdev^2)
+mice_share3 <- mice_pca3$sdev^2 / sum(mice_pca3$sdev^2)
+
+mouse_line_plot <- function(direction, line_color) {
+  v <- direction / sqrt(sum(direction^2))
+  proj_len <- as.numeric(as.matrix(mice_cent) %*% v)
+  proj <- data.frame(
+    x0 = mice_cent$gene1, y0 = mice_cent$gene2,
+    x1 = as.numeric(proj_len) * v[1],
+    y1 = as.numeric(proj_len) * v[2]
+  )
+  line <- data.frame(x = c(-1, 1) * 4.2 * v[1], y = c(-1, 1) * 4.2 * v[2])
+  ggplot() +
+    geom_hline(yintercept = 0, color = "grey85") +
+    geom_vline(xintercept = 0, color = "grey85") +
+    geom_segment(
+      data = proj, aes(x = x0, y = y0, xend = x1, yend = y1),
+      color = "grey65", linewidth = 0.3
+    ) +
+    geom_path(data = line, aes(x, y), color = line_color, linewidth = 0.9) +
+    geom_point(data = mice_cent, aes(gene1, gene2), color = "#08519c", size = 2.2) +
+    coord_equal(xlim = c(-4.2, 4.2), ylim = c(-4.2, 4.2)) +
+    labs(
+      x = "Gene 1, centered", y = "Gene 2, centered",
+      subtitle = sprintf("Spread along the line = %.0f", sum(proj_len^2))
+    ) +
+    theme_bw(base_size = 12) +
+    theme(plot.subtitle = element_text(size = 11))
+}
+
+mouse_scree <- function(share, k) {
+  var_df <- data.frame(
+    component = factor(paste0("PC", seq_len(k)), levels = paste0("PC", seq_len(k))),
+    pct = round(100 * share[seq_len(k)], 1)
+  )
+  ggplot(var_df, aes(component, pct)) +
+    geom_col(fill = "#08519c", width = 0.62) +
+    geom_text(aes(label = paste0(pct, "%")), vjust = -0.4, size = 3.6) +
+    scale_y_continuous(limits = c(0, 100), expand = c(0, 0)) +
+    labs(x = NULL, y = "Share of variation (%)") +
+    theme_bw(base_size = 12)
+}
+```
+
+# How the components are chosen
+
+## Start with two measurements
+
+Each point is one mouse. The two axes are Gene 1 and Gene 2.
+
+```{r mouse-raw, echo=FALSE, fig.width=6.2, fig.height=4.6, out.width="70%", fig.align="center"}
+ggplot(mice, aes(gene1, gene2)) +
+  geom_point(color = "#08519c", size = 2.4) +
+  geom_point(
+    aes(x = mice_mean[1], y = mice_mean[2]),
+    shape = 4, stroke = 1.1, size = 4, color = "#b2182b"
+  ) +
+  coord_equal() +
+  labs(x = "Gene 1", y = "Gene 2", subtitle = "The red cross is the mean of each gene") +
+  theme_bw(base_size = 12) +
+  theme(plot.subtitle = element_text(size = 11))
+```
+
+## Move the cloud onto the origin
+
+Subtract each gene's mean. The cloud keeps its shape, and the origin is now its center.
+
+```{r mouse-center, echo=FALSE, fig.width=6, fig.height=4.8, out.width="62%", fig.align="center"}
+ggplot(mice_cent, aes(gene1, gene2)) +
+  geom_hline(yintercept = 0, color = "grey75") +
+  geom_vline(xintercept = 0, color = "grey75") +
+  geom_point(color = "#08519c", size = 2.4) +
+  coord_equal(xlim = c(-4.2, 4.2), ylim = c(-4.2, 4.2)) +
+  labs(x = "Gene 1, centered", y = "Gene 2, centered") +
+  theme_bw(base_size = 12)
+```
+
+## A line through the origin can fit badly
+
+The grey segments are the distances from the mice to the line. This line leaves a lot of the cloud off to the side.
+
+```{r mouse-bad-line, echo=FALSE, fig.width=6, fig.height=4.8, out.width="62%", fig.align="center"}
+mouse_line_plot(c(0, 1), "#b2182b")
+```
+
+## PC1 is the line with the largest spread
+
+Rotate the line until the projections are as spread out along it as possible. That direction is the first principal component.
+
+```{r mouse-pc1, echo=FALSE, fig.width=6, fig.height=4.8, out.width="62%", fig.align="center"}
+mouse_line_plot(mice_pca$rotation[, 1], "#b2182b")
+```
+
+## The weights on PC1 are the loading scores
+
+PC1 is a mix of the original genes. With these mice the mix is
+
+```{r mouse-loadings, echo=FALSE, results="asis"}
+w <- mice_pca$rotation[, 1]
+sign_term <- if (w[2] >= 0) sprintf("+ %.2f", w[2]) else sprintf("- %.2f", abs(w[2]))
+cat(sprintf(
+  "\\[\n\\mathrm{PC1} = %.2f \\times \\mathrm{Gene\\ 1} %s \\times \\mathrm{Gene\\ 2}\n\\]\n",
+  w[1], sign_term
+))
+```
+
+Both weights are positive, so PC1 runs up and to the right: mice with high values on both genes land at one end.
+
+## Names for the pieces of PC1
+
+- **Loading scores** are the weights in that mix. They say how much each gene contributes.
+- The unit-length list of loading scores is the **eigenvector**, also called a **singular vector**.
+- The sum of squared distances along the component is the **eigenvalue**.
+- The **singular value** is the square root of the eigenvalue.
+
+## PC2 is perpendicular to PC1
+
+```{r mouse-both-lines, echo=FALSE, fig.width=6, fig.height=4.8, out.width="62%", fig.align="center"}
+v1 <- mice_pca$rotation[, 1]
+v2 <- mice_pca$rotation[, 2]
+lines <- rbind(
+  data.frame(x = c(-1, 1) * 4.2 * v1[1], y = c(-1, 1) * 4.2 * v1[2], component = "PC1"),
+  data.frame(x = c(-1, 1) * 4.2 * v2[1], y = c(-1, 1) * 4.2 * v2[2], component = "PC2")
+)
+ggplot() +
+  geom_hline(yintercept = 0, color = "grey85") +
+  geom_vline(xintercept = 0, color = "grey85") +
+  geom_path(
+    data = lines, aes(x, y, color = component, group = component),
+    linewidth = 0.9
+  ) +
+  geom_point(data = mice_cent, aes(gene1, gene2), color = "#08519c", size = 2.2) +
+  scale_color_manual(values = c(PC1 = "#b2182b", PC2 = "#7570b3")) +
+  coord_equal(xlim = c(-4.2, 4.2), ylim = c(-4.2, 4.2)) +
+  labs(x = "Gene 1, centered", y = "Gene 2, centered", color = NULL) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+
+## Project the mice onto the two lines
+
+A mouse's coordinate on a component is its signed distance along that line.
+
+```{r mouse-scores, echo=FALSE, fig.width=6.2, fig.height=4.6, out.width="68%", fig.align="center"}
+mouse_scores <- as.data.frame(mice_pca$x[, 1:2])
+ggplot(mouse_scores, aes(PC1, PC2)) +
+  geom_hline(yintercept = 0, color = "grey85") +
+  geom_vline(xintercept = 0, color = "grey85") +
+  geom_point(color = "#08519c", size = 2.4) +
+  coord_equal() +
+  labs(
+    x = sprintf("PC1 (%.0f%% of the variation)", 100 * mice_share[1]),
+    y = sprintf("PC2 (%.0f%% of the variation)", 100 * mice_share[2]),
+    subtitle = "The centered cloud, turned so PC1 is horizontal"
+  ) +
+  theme_bw(base_size = 12) +
+  theme(plot.subtitle = element_text(size = 11))
+```
+
+## The scree plot ranks those shares
+
+The share of a component is its variation divided by the total variation.
+
+```{r mouse-scree, echo=FALSE, fig.width=6.2, fig.height=3.8, out.width="72%", fig.align="center"}
+mouse_scree(mice_share, 2)
+```
+
+PC1 is the component to read first. PC2 is the leftover in this two-gene cloud.
+
+## Three genes use the same recipe
+
+- PC1 is still the best-fit line through the origin
+- PC2 is the best-fit line perpendicular to PC1
+- PC3 is the direction perpendicular to both
+- Adding genes adds components. It does not change the steps
+
+## The scree plot shows which components to keep
+
+```{r mouse-scree-3, echo=FALSE, fig.width=6.2, fig.height=3.8, out.width="72%", fig.align="center"}
+mouse_scree(mice_share3, 3)
+```
+
+PC3 is a thin slice of the variation, so the picture of these mice uses PC1 and PC2.
+
+## PC1 and PC2 still make the plot
+
+```{r mouse-scores-3, echo=FALSE, fig.width=6.2, fig.height=4.5, out.width="68%", fig.align="center"}
+mouse_scores3 <- as.data.frame(mice_pca3$x[, 1:2])
+ggplot(mouse_scores3, aes(PC1, PC2)) +
+  geom_hline(yintercept = 0, color = "grey85") +
+  geom_vline(xintercept = 0, color = "grey85") +
+  geom_point(color = "#08519c", size = 2.4) +
+  coord_equal() +
+  labs(
+    x = sprintf("PC1 (%.0f%% of the variation)", 100 * mice_share3[1]),
+    y = sprintf("PC2 (%.0f%% of the variation)", 100 * mice_share3[2])
+  ) +
+  theme_bw(base_size = 12)
+```
+
+## PCA is one map among several
+
+The same wide table can be drawn in other ways:
+
+- A heatmap keeps every measurement on the page
+- t-SNE places cases in 2D so that neighbors stay neighbors
+- Multidimensional scaling (MDS) places cases in 2D while trying to keep distances
+
+PCA is the version whose axes are ordered by how much variation they carry.
+
+# Dimensionality Reduction / Principal Component Analysis
+
+## Iris is this same kind of table
+
+Each flower has four measurements. The next plot shows every pair of measurements, with one point per flower.
+
+PCA then gives each flower new coordinates. Flowers with similar measurements land close together.
+
+## Principal Component Analysis
+
+```{r, out.height="70%", out.width="80%"}
+ggpairs(iris,columns = 1:4, mapping = aes(color = Species))
+```
+
+## Principal Component Analysis
+
+```{r}
+iris_pca = prcomp(x = iris[,1:4], center = T, scale. = T)
+iris_pca
+```
+
+## Principal Component Analysis
+
+Types of visualizations
+
+-   **Scree Plot**
+    -   Shows the variance explained by each principal component.
+    -   Helps determine the number of components to retain by
+        visualizing where the "elbow" occurs.\
+-   **Score Plot**
+    -   Plots the data in the new component space, often the first two
+        principal components.
+    -   Reveals clusters or patterns in data points, such as grouping
+        countries based on similarities.
+
+## Principal Component Analysis
+
+Types of visualizations
+
+-   **Loading Plot**
+    -   Visualizes how strongly each original variable contributes to
+        each principal component.
+    -   Helps interpret the meaning of each component based on variable
+        correlations.
+-   **Biplot**
+    -   Combines the PCA score plot with loadings to show both data
+        points (e.g., countries) and feature correlations.
+    -   Useful for interpreting how original variables contribute to
+        principal components.
+
+## Principal Component Analysis - Scree plot
+
+Variance explained
+
+```{r}
+iris_pca$sdev^2
+```
+
+Proportion of Variance explained
+
+```{r}
+var_explained = iris_pca$sdev^2/sum(iris_pca$sdev^2)
+var_explained
+```
+
+## Principal Component Analysis - Scree plot
+
+Scree plot
+
+```{r, out.height="70%", out.width="80%"}
+fviz_screeplot(iris_pca, addlabels = T)
+```
+
+## Principal Component Analysis - Score plot
+
+```{r}
+head(iris_pca$x)
+```
+
+## Principal Component Analysis - Score plot
+
+Combine together into one dataframe and visualize
+
+```{r}
+pca_data_frame = data.frame(iris, iris_pca$x[,1:2]) 
+```
+
+```{r, out.height="50%", out.width="80%"}
+ggplot(data = pca_data_frame, aes(x = PC1, y = PC2, 
+    color = Species)) + geom_point()
+```
+
+## Principal Component Analysis - Score plot
+
+Using library factoextra
+
+```{r, out.height="70%", out.width="80%"}
+fviz_pca_ind(iris_pca, geom = "point", habillage = iris$Species)
+```
+
+## Principal Component Analysis - Loading plot (Variables plot)
+
+```{r, out.height="70%", out.width="80%"}
+fviz_pca_var(iris_pca, repel = T) 
+```
+
+## Principal Component Analysis - Loading plot (Variables plot)
+
+Loadings also help to interpret the graph.
+
+PC1
+
+-   **Petal.Length** has the highest positive loading on PC1, meaning it
+    contributes the most to this component.
+-   **Petal.Width** also has a positive loading, though smaller than
+    Petal.Length, so it also influences PC1 but to a lesser extent.
+
+```{r}
+iris_pca$rotation
+```
+
+## Principal Component Analysis - Loading plot (Variables plot)
+
+-   **Sepal.Width** has a high negative loading, indicating it is
+    strongly associated with PC2 in the negative direction.
+-   **Sepal.Length** also has a strong negative loading.
+
+```{r, echo = F}
+iris_pca$rotation
+```
+
+## Principal Component Analysis - Loading plot (Variables plot)
+
+Lets look at the correlations
+
+\scriptsize
+
+```{r}
+cor(pca_data_frame[,-5]) %>% round(4)
+```
+
+## Principal Component Analysis - Biplot
+
+Biplot - variables and cases together
+
+```{r, out.height="70%", out.width="80%"}
+fviz_pca_biplot(iris_pca, label = "var", habillage = iris$Species)
+```
+
+## Principal Component Analysis
+
+Decathlon data
+
+\scriptsize
+
+```{r}
+data("decathlon")
+decathlon = decathlon %>% filter(Competition == "OlympicG")
+head(decathlon, 3)
+```
+
+## Principal Component Analysis
+
+\scriptsize
+
+```{r}
+decathlon_pca = prcomp(decathlon[,1:10], center = T, scale. = T)
+summary(decathlon_pca)
+```
+
+## Principal Component Analysis
+
+Scree plot
+
+```{r, out.height="70%", out.width="80%"}
+fviz_screeplot(decathlon_pca, addlabels = TRUE)
+```
+
+## Principal Component Analysis
+
+First lets look at the correlation heatmap
+
+```{r, out.height="60%", out.width="80%"}
+decathlon_cor_mat = cor(decathlon[,2:11])
+ggcorrplot(decathlon_cor_mat , type = "lower", lab = T)
+```
+
+## Principal Component Analysis
+
+Groups of variables:
+
+-   **Sprints** 400m, 100m, 110m hurdle
+
+-   **Throws** Discus, shot put, javeline
+
+-   **Jumps** long jump, pole vault
+
+## Principal Component Analysis (Var Plot)
+
+```{r, out.height="70%", out.width="70%"}
+fviz_pca_var(decathlon_pca, repel = T)
+```
+
+## Principal Component Analysis
+
+400m, 100m, 110m hurdle
+
+![](Img/decathlon%201.png)
+
+## Principal Component Analysis
+
+Discus, shot put, javeline
+
+![](Img/decathlon%202.png)
+
+## Principal Component Analysis
+
+```{r out.height="70%", out.width="80%"}
+fviz_pca_ind(decathlon_pca, repel = T)
+```
+
+## Principal Component Analysis
+
+```{r out.height="70%", out.width="80%"}
+fviz_pca_biplot(decathlon_pca, repel = T)
+```
+
+# Cluster Analysis
+
+## Cluster Analysis
+
+Finding groups of objects such that the objects in a group will be
+similar (or related) to one another and different from (or unrelated to)
+the objects in other groups
+
+```{r, echo = F, out.width="80%"}
+include_graphics('Img/Creating_clusters.png')
+```
+
+## Cluster Analysis
+
+-   Cluster is a group of similar objects (cases, points, observations,
+    examples, members, customers, patients, locations, etc)
+
+-   Finding the groups of cases/observations/objects in the population
+    such that the objects are
+
+    -   Homogeneous within the group (high intra-class similarity)
+    -   Heterogeneous between the groups (low inter-class similarity)
+
+## Cluster Analysis
+
+Clustering methods
+
+-   Hierarchical clustering
+-   Partitioning based clustering
+
+## Cluster Analysis
+
+Hierarchical clustersing
+
+**Agglomerative Methods**
+
+-   Begin with n-clusters (each record its own cluster)
+-   Keep joining records into clusters until one cluster is left (the
+    entire data set)
+-   Most popular
+
+\hfill\break
+
+**Divisive Methods**
+
+-   Start with one all-inclusive cluster
+-   Repeatedly divide into smaller clusters
+
+## Cluster Analysis
+
+Distance measures
+
+-   To combine similar records together we need to measure the distance,
+    similarity/dissimilarity between records and clusters
+
+-   Two groups of distance measures:
+
+    1.  Distance between records
+    2.  Distance between clusters
+
+## Doing in R: Hierarchical Clustering
+
+-   Read the data
+-   Set country names as row names for the DataFrame
+-   Select two columns for clustering
+-   Scale to z-scores
+-   Remove countries with NA values
+
+\vspace{0.5cm}
+
+\scriptsize
+
+```{r}
+countries = read.csv("data/countries.csv")
+
+rownames(countries)=countries$ISO_code
+
+countries_subset = countries[,c("Unemployment", "GDP.per.Capita.PPP")]
+
+countries_subset = as.data.frame(scale(countries_subset, 
+                                       center=TRUE, scale=TRUE))
+
+countries_subset = na.omit(countries_subset)
+```
+
+## Doing in R: Hierarchical Clustering
+
+-   Calculate the distance matrix
+-   The hclust function takes distance matrix as a first argument
+
+```{r}
+countries_distance = dist(countries_subset, method="euclidian")
+```
+
+```{r}
+cl  =  hclust(countries_distance, method="complete")
+cl
+```
+
+## Cluster Analysis (Dendrogram)
+
+Dendrogram represents how the clusters are created.
+
+```{r, out.height='70%', out.width='80%'}
+plot(cl, hang=-1)
+```
+
+## Cluster Analysis (Dendrogram)
+
+Understanding a Dendrogram
+
+-   **Hierarchical Structure:** A dendrogram visualizes hierarchical
+    clustering, showing the arrangement of observations into nested
+    clusters.
+-   **Height of Branches:** The height (or length) of the branches
+    represents the distance or dissimilarity between clusters. Higher
+    branches mean greater dissimilarity.
+-   **Merging Points:** Where branches join indicates clusters that have
+    been combined. Lower merging points imply more similar clusters.
+
+## Cluster Analysis (Dendrogram)
+
+How many clusters to choose? Look for an elbow.
+
+```{r, out.height="65%", out.width="80%"}
+fviz_nbclust(countries_subset, FUNcluster = factoextra::hcut, 
+             method = "wss")
+```
+
+## Cluster Analysis
+
+If we choose **5** clusters
+
+```{r, out.height="65%", out.width="80%"}
+plot(cl, hang=-1)
+rect.hclust(cl, 5)
+```
+
+## Cluster Analysis
+
+Interpreting a Dendrogram
+
+-   **Cutting the Dendrogram:** By "cutting" the dendrogram at a
+    specific height, you can choose the number of clusters. Lower cuts
+    result in more clusters, while higher cuts yield fewer.
+-   **Cluster Similarity:** Observations or groups of observations that
+    merge at a lower height are more similar to each other compared to
+    those merging at a higher height.
+-   **Cluster Size and Shape:** Dense clusters merge early, while more
+    dispersed clusters join at higher levels, often indicating more
+    variance within those groups.
+
+## Cluster analysis
+
+Using factoviz library
+
+```{r, out.height="65%", out.width="80%"}
+fviz_dend(cl, k = 5)
+```
+
+## Cluster analysis
+
+Circular dendrogram
+
+```{r, out.height="65%", out.width="80%"}
+fviz_dend(cl, k = 5, type = "circular")
+```
+
+## Cluster analysis
+
+We can create a new variable with cluster membership.
+
+\hfill\break
+
+**Cluster membership**
+
+```{r}
+countries_subset$cl_membership = as.factor(cutree(cl, k=5))
+table(countries_subset$cl_membership)
+```
+
+## Cluster analysis
+
+Visualizing clusters
+
+\footnotesize
+
+```{r, out.height="60%", out.width="80%"}
+ggplot(data = countries_subset, aes(x = Unemployment, y = GDP.per.Capita.PPP, 
+      color = cl_membership)) + geom_point()
+```
+
+# K-Means Clustering
+
+## Cluster Analysis: K-means
+
+-   Is used when the number of the clusters we are looking for is known
+    beforehand
+-   We assume that the data is divided equally among the clusters
+
+## Cluster Analysis: K-means
+
+The number of clusters is defined by the user
+
+\hfill\break
+
+Given *k*, the *k-means* algorithm consists of four steps:
+
+-   Select initial centroids at random.
+-   Assign each object to the cluster with the nearest centroid.
+-   Compute each centroid as the mean of the objects assigned to it.
+-   Repeat previous 2 steps until no change.
+
+## Cluster Analysis: K-means
+
+With this steps K-means algorithm **maximizes** Between group Sum of
+Squares and **minimizes** within group Sum of Squares.
+
+\vspace{0.5cm}
+
+Total Sum of Squares
+
+$$SST = \sum_{j=1}^{m}\sum_{i=1}^{n} (y_{ij} - \bar{y}_m)^2\quad$$
+
+Between Groups Sum of Squares
+
+$$SSB = \sum_{l=1}^{k}\sum_{j=1}^{m} (\bar{y}_{km} - \bar{y}_m)^2\quad$$
+
+## Cluster Analysis: K-means
+
+Within group sum of squares
+
+$$SSW = \sum_{l=1}^{k}\sum_{j=1}^{m}\sum_{i=1}^{n} (y_{ijk} - \bar{y}_{km})^2\quad$$
+
+Where *i* is the number of the row/case, *j* number of the variables,
+*k* is the number of the groups/clusters $$SST = SSB + SSW$$
+
+## Cluster Analysis: K-means
+
+Doing in R
+
+```{r}
+countries_kmeans = kmeans(countries_subset[,1:2], centers = 3)
+```
+
+\hfill\break
+
+What is inside ?
+
+```{r}
+names(countries_kmeans)
+```
+
+## Cluster Analysis: K-means
+
+Shows the means/centers of each variable for each cluster
+
+```{r}
+countries_kmeans$centers
+```
+
+## Cluster Analysis: K-means
+
+How good is the clustering?
+
+```{r}
+countries_kmeans$betweenss/countries_kmeans$totss
+```
+
+```{=tex}
+\hfill\break
+\hfill\break
+```
+66.7% of the total variance in the data can be explained by the clusters
+
+## Cluster Analysis: K-means
+
+How many clusters to chose?
+
+```{r, out.height="65%", out.width="80%"}
+fviz_nbclust(countries_subset, kmeans, method = "wss") +
+  labs(title = "K-means Scree Plot")
+```
+
+## Cluster Analysis: K-means
+
+Look at the cluster membership
+
+```{r}
+countries_kmeans = kmeans(countries_subset[,1:2], centers = 5)
+countries_subset$kmeans = as.factor(countries_kmeans$cluster)
+table(countries_subset$kmeans)
+```
+
+## Cluster Analysis: K-means
+
+Visualizing the clusters
+
+```{r, out.height='60%', out.width='80%'}
+ggplot(data = countries_subset, aes(x = Unemployment, 
+     y = GDP.per.Capita.PPP, color = kmeans)) + geom_point()
+```
+
+# Dendrogram Heatmaps
+
+## Dendrogram Heatmaps
+
+A **dendrogram heatmap** is a combined visualization that merges a
+heatmap with dendrograms to represent hierarchical clustering.
+
+-   **Heatmap Component:** A matrix-like visual where colors represent
+    the intensity of values in the data, allowing quick comparison
+    across rows and columns.
+-   **Dendrogram Component:** Tree-like structures on the sides of the
+    heatmap (typically on rows and columns) that illustrate hierarchical
+    clustering, grouping similar data points together.
+    -   **Clustering by Rows and Columns:** Both rows (data points) and
+        columns (features) can be clustered, allowing for simultaneous
+        grouping based on both samples and variables.
+
+## Dendrogram Heatmaps
+
+-   **Hierarchical Clustering Integration:** The dendrograms reorder the
+    rows and columns of the heatmap based on similarity, making patterns
+    and clusters more evident.
+-   **Purpose:** Provides a dual insight by showing both the actual data
+    values (via color) and the relationships between data points (via
+    clusters).
+-   **Usefulness:** Makes it easier to identify groups, trends, and
+    outliers in complex datasets by visually clustering similar items.
+
+## Dendrogram Heatmaps
+
+**What a Dendrogram Heatmap Helps Us Achieve**
+
+-   **Identify Patterns and Clusters:** Combines heatmap intensity with
+    hierarchical clustering, making it easy to spot groups or clusters
+    of similar data points.
+-   **Reveal Data Structure:** Shows how data points or features relate
+    to each other in a hierarchical way, highlighting nested groupings.
+-   **Simplify Complex Data:** Reduces complexity by visually grouping
+    related rows and columns, making large datasets easier to interpret.
+
+## Dendrogram Heatmaps
+
+Get subset of iris data and scale it
+
+```{r}
+iris_scaled <- iris[1:10, -5]  
+iris_scaled <- scale(iris_scaled)
+```
+
+## Dendrogram Heatmaps
+
+```{r, out.height="70%"}
+pheatmap(iris_scaled, cluster_rows = FALSE, cluster_cols = FALSE)
+```
+
+## Dendrogram Heatmaps
+
+```{r, out.height="65%", out.width="80%"}
+iris_clust = hclust(d = dist(iris_scaled), method = "complete")
+fviz_dend(iris_clust)
+```
+
+## Dendrogram Heatmaps
+
+```{r, out.height="70%"}
+pheatmap(iris_scaled, cluster_rows = T, cluster_cols = F)
+```
+
+## Dendrogram Heatmaps
+
+-   transpose iris_scaled
+-   calculate the distance matrix
+-   cluster
+
+```{r}
+iris_scaled_t = t(iris_scaled)
+iris_clust_t = hclust(d = dist(iris_scaled_t))
+```
+
+## Dendrogram Heatmaps
+
+```{r, out.height="70%"}
+fviz_dend(iris_clust_t, repel = T)
+```
+
+## Dendrogram Heatmaps
+
+```{r, out.height="70%"}
+pheatmap(iris_scaled, cluster_rows = T, cluster_cols = T)
+```
+
+## Dendrogram Heatmaps
+
+Lets look at the whole dataset
+
+```{r, out.height="60%", out.width="80%"}
+iris_scaled = scale(iris[,-5]) %>% as.data.frame()
+pheatmap(iris_scaled, cluster_rows = T, cluster_cols = T)
+```
+
+## Dendrogram Heatmaps
+
+Decathlon dataset
+
+```{r, out.height="60%", out.width="80%"}
+decathlon_scaled = scale(decathlon[,1:10])
+pheatmap(decathlon_scaled, cluster_rows = T, cluster_cols = T)
+```
+
+# PCA and Cluster Analysis
+
+## PCA and Cluster Analysis
+
+**Benefits of Using PCA and Clustering Together**
+
+-   **Simplifies High-Dimensional Data:** PCA reduces the data's
+    complexity, summarizing it into a few principal components, which
+    makes it easier to visualize and interpret.
+-   **Enhanced Visualization of Clusters:** By reducing the data to two
+    or three dimensions, clusters become more visually distinct, helping
+    reveal group structures that may not be apparent in the original
+    data.
+-   **Highlights Key Patterns:** PCA brings out the most influential
+    variables, while clustering groups similar observations, making both
+    patterns and outliers more evident.
+-   **Reduces Visual Clutter:** With PCA simplifying dimensions and
+    clustering organizing the data, the result is a cleaner, more
+    informative visualization.
+
+## PCA and Cluster Analysis
+
+The dataset contains credit card usage behavior of about 9000 active
+credit card holders.
+
+Here is the link to the dataset
+<https://www.kaggle.com/datasets/arjunbhasin2013/ccdata>
+
+\tiny
+
+```{r, out.height="60%"}
+cc_data = read.csv("Data/CC GENERAL.csv")
+str(cc_data)
+```
+
+## PCA and Cluster Analysis
+
+Look at the missing values:
+
+You can:
+
+-   remove cases with missing values
+
+-   do missing value imputation
+
+\tiny
+
+```{r, out.height="60%"}
+sapply(cc_data, function(x) sum(is.na(x)))
+```
+
+## PCA and Cluster Analysis
+
+Data cleaning:
+
+-   Remove missing cases with missing values
+-   Remove variable CUST_ID
+-   Do z-score scaling
+
+```{r}
+cc_data = na.omit(cc_data)
+cc_data$CUST_ID = NULL
+cc_data_scaled = scale(cc_data) %>% as.data.frame()
+```
+
+## PCA and Cluster Analysis
+
+Run PCA and visualize variance explained
+
+\scriptsize
+
+```{r, out.height="60%", out.width="80%"}
+cc_pca = prcomp(cc_data_scaled)
+fviz_screeplot(cc_pca, addlabels = T)
+```
+
+## PCA and Cluster Analysis
+
+-   Extract cumulative variance explained
+-   Make scree plot for **cumulative** variance explained
+
+```{r}
+var_explained <- cc_pca$sdev^2 / sum(cc_pca$sdev^2)       
+cum_var_explained <- cumsum(var_explained)               
+var_df <- data.frame(
+  Component = 1:length(cum_var_explained),
+  CumulativeVariance = cum_var_explained
+)
+```
+
+## PCA and Cluster Analysis
+
+```{r, eval = F}
+ggplot(var_df, aes(x = Component, y = CumulativeVariance)) +
+  geom_line() + geom_point(color = "red")+
+  geom_text(aes(label = scales::percent(CumulativeVariance, 
+     accuracy = 1)), vjust = -0.5, color = "black", size = 3.5) +
+  scale_y_continuous(labels = scales::percent_format())
+```
+
+## PCA and Cluster Analysis
+
+```{r, echo = F, out.height="80%", out.width = "90%"}
+ggplot(var_df, aes(x = Component, y = CumulativeVariance)) +
+  geom_line() + geom_point(color = "red")+
+  geom_text(aes(label = scales::percent(CumulativeVariance, 
+     accuracy = 1)), vjust = -0.5, color = "black", size = 3.5) +
+  scale_y_continuous(labels = scales::percent_format())
+```
+
+## PCA and Cluster Analysis
+
+We will chose 7 components and do k-mean clustering on this components
+
+\tiny
+
+```{r}
+cc_pca_data = cc_pca$x[,1:7] %>% as.data.frame()
+head(cc_pca_data)
+```
+
+## PCA and Cluster Analysis
+
+-   K-means and let us go with 6 clusters
+-   Add cluster membership variable to the dataframe
+-   Calculate cluster quality score
+
+```{r}
+cc_kmeans = kmeans(cc_pca_data, centers = 6)
+cc_pca_data$kmeans = as.factor(cc_kmeans$cluster)
+cc_kmeans$betweenss/cc_kmeans$totss
+```
+
+## PCA and Cluster Analysis
+
+```{r, out.height="70%", out.width="85%"}
+ggpairs(cc_pca_data, columns = 1:6, mapping = aes(color = kmeans), 
+        progress = F)
+```
